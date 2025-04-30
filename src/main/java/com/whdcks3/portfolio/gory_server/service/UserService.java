@@ -107,7 +107,8 @@ public class UserService {
         EmailVerification verificationToken = new EmailVerification();
         String token = UUID.randomUUID().toString();
         verificationToken.setToken(token);
-        String EmailLink = "http://localhost:3434/api/user/find_account?token=" + verificationToken.getToken();
+        String EmailLink = "https://gory-server.seojongchan-dev.com/api/user/find_account?token="
+                + verificationToken.getToken();
         emailUtils.sendEmail(email, "이메일 인증", "메일을 클릭해주세요: " + EmailLink);
     }
 
