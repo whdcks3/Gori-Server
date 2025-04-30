@@ -30,6 +30,7 @@ import com.whdcks3.portfolio.gory_server.data.requests.SquadRequest;
 import com.whdcks3.portfolio.gory_server.enums.Gender;
 import com.whdcks3.portfolio.gory_server.enums.JoinType;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -42,6 +43,7 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @DynamicInsert
+@AllArgsConstructor
 public class Squad extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

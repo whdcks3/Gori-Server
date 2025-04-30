@@ -18,6 +18,7 @@ import org.hibernate.annotations.DynamicInsert;
 import com.whdcks3.portfolio.gory_server.common.BaseEntity;
 import com.whdcks3.portfolio.gory_server.data.models.user.User;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,6 +30,7 @@ import lombok.Setter;
 @Setter
 @Builder
 @NoArgsConstructor
+@AllArgsConstructor
 @DynamicInsert
 public class SquadChat extends BaseEntity {
 
