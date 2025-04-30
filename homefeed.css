@@ -1,0 +1,54 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+button {
+    margin: 10px;
+    padding: 10px 15px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 5px;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+#feedList {
+    list-style: none;
+    padding: 0;
+    max-width: 600px;
+    margin: auto;
+}
+
+.feed-item {
+    background: #f9f9f9;
+    margin: 10px;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: left;
+}
+
+.feed-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.feed-image {
+    width: 100px;
+    height: 100px;
+    margin-top: 10px;
+    border-radius: 5px;
+}
+
+.like-btn {
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+}

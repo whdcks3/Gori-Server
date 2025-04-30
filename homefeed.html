@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feed 목록</title>
+    <link rel="stylesheet" href="homefeed.css">
+</head>
+
+<body>
+
+    <h1>Feed 목록</h1>
+
+    <label for="category">카테고리 선택:</label>
+    <select id="category">
+        <option value="전체">전체</option>
+        <option value="건강/운동">건강/운동</option>
+        <option value="맛집/카페">맛집/카페</option>
+        <option value="독서/영화">독서/영화</option>
+    </select>
+
+    <button id="loadFeeds">피드 가져오기</button>
+
+    <ul id="feedList"></ul>
+
+    <button id="loadMore" style="display: none;">더 보기</button>
+
+    <script src="homefeed.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,1 @@
+org.springframework.boot.env.EnvironmentPostProcessor=com.whdcks3.portfolio.gory_server.config.EnvConfig
