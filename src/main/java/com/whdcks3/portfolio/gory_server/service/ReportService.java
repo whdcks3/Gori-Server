@@ -38,7 +38,6 @@ public class ReportService {
     @Autowired
     FeedRepository feedRepository;
 
-    // 유저 신고
     public void reportUser(Long reporterId, Long reportedId, ReportRequest req) {
         User reporter = userRepository.findById(reporterId).orElseThrow();
         User reported = userRepository.findById(reportedId).orElseThrow();
@@ -47,7 +46,6 @@ public class ReportService {
         reportUserRepository.save(report);
     }
 
-    // 모임 신고
     public void reportSquad(Long reporterId, Long squadId, ReportRequest req) {
         User reporter = userRepository.findById(reporterId).orElseThrow();
         Squad squad = squadRepository.findById(squadId).orElseThrow();
@@ -56,7 +54,6 @@ public class ReportService {
         reportSquadRepository.save(report);
     }
 
-    // 피드 신고
     public void reportFeed(Long reporterId, Long feedId, ReportRequest req) {
         User reporter = userRepository.findById(reporterId).orElseThrow();
         Feed feed = feedRepository.findById(feedId).orElseThrow();

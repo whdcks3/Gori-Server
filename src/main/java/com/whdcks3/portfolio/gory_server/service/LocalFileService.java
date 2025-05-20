@@ -21,7 +21,7 @@ public class LocalFileService implements FileService {
     @Override
     public String upload(MultipartFile file) {
         try {
-            String filename = UUID.randomUUID().toString(); // 랜덤난수생성,
+            String filename = UUID.randomUUID().toString();
             Path filePath = Paths.get(location, filename);
 
             Files.createDirectories(filePath.getParent());

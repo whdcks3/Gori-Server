@@ -47,7 +47,6 @@ public class UserService {
     @Autowired
     ChatroomService chatroomService;
 
-    // 기본 닉네임 생성
     public String generateNickname() {
         String[] name1 = { "넉살좋은", "발랄한", "산뜻한", "아리따운", "적극적인", "착한", "훌륭한", "고요한", "낙천적인", "부드러운", "수려한", "어린",
                 "정의로운", "청초한", "활동적인", "고운", "낭만적", "빼어난", "순한", "어여쁜", "조용한", "창의적인", "화사한", "근면한", "다정한", "밝은",
@@ -72,13 +71,10 @@ public class UserService {
         return strName1 + " " + strName2;
     }
 
-    // TODO : 닉네임 기본 생성(완료) , 중복이 있는 닉네임 X, 한글, 영어,숫자인 닉네임
-
     public boolean hasUsername(User user) {
         return !user.getNickname().equals("");
     }
 
-    // 중복닉네임 처리
     public void updateNickname(User user, String nickname) {
         if (duplicationNickname(user.getPid(), nickname)) {
             throw new NicknameDuplicatedException();
@@ -91,7 +87,6 @@ public class UserService {
         return userRepository.existsByNicknameAndPidNot(nickname, uid);
     }
 
-    // 이름 형식 제한(영어,한글,2~8글자 이내)
     public String limitNickname(String nickname) {
         String regex = "^[a-zA-Z0-9가-힣]{2,8}$";
         if (!nickname.matches(regex)) {
@@ -102,7 +97,6 @@ public class UserService {
 
     }
 
-    // 계정찾기 이메일 인증
     public void sendEmailLink(String email) {
         EmailVerification verificationToken = new EmailVerification();
         String token = UUID.randomUUID().toString();
@@ -112,7 +106,6 @@ public class UserService {
         emailUtils.sendEmail(email, "이메일 인증", "메일을 클릭해주세요: " + EmailLink);
     }
 
-    // 패스워드 변경
     public void modifyPassword(String email, String snsType, String snsId, String password) {
         User user = userRepository.findByEmail(email).orElseThrow();
         String encoded = passwordEncoder.encode(password);
@@ -167,6 +160,6 @@ public class UserService {
 
     public void alarmSet(User user, UserAlarmRequest req) {
         user.updateAlarmSetting(req.getAlarmType(), req.getAlarmEnabled());
-    } // or 한번에 끄기
+    }
 
 }

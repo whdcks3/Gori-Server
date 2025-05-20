@@ -74,12 +74,31 @@ public class SquadService extends ASquadService {
     }
 
     public DataResponse homeSquads(User user, SquadFilterRequest req, Pageable pageable) {
+        // if (req.getCategory().equals("전체")) {
+        // req.setCategory("");
+        // }
+        // if (req.getRegionMain().equals("전체")) {
+        // req.setRegionMain("");
+        // }
+        // if (req.getRegionSub().equals("전체")) {
+        // req.setRegionSub("");
+        // }
         List<User> excludedUsers = new ArrayList<>();
         if (user != null) {
             excludedUsers = getExcludedUsers(user);
         }
-        Page<Squad> squads = squadRepository.findFilteredSquadsWithExclusion(req.getCategory(), req.getRegionMain(),
-                req.getRegionSub(), req.isRecruitingOnly(), excludedUsers, pageable);
+        System.out.println(req);
+        Page<Squad> squads;
+
+        if (excludedUsers.isEmpty()) {
+            squads = squadRepository.findFilteredSquads(req.getCategory(), req.getRegionMain(),
+                    req.getRegionSub(), req.isRecruitingOnly(), pageable);
+        } else {
+            squads = squadRepository.findFilteredSquadsWithExclusion(req.getCategory(), req.getRegionMain(),
+                    req.getRegionSub(), req.isRecruitingOnly(), excludedUsers, pageable);
+        }
+        System.out.println(
+                new DataResponse(squads.hasNext(), squads.getContent().stream().map(SquadSimpleDto::toDto).toList()));
         return new DataResponse(squads.hasNext(), squads.getContent().stream().map(SquadSimpleDto::toDto).toList());
     }
 
@@ -107,7 +126,6 @@ public class SquadService extends ASquadService {
         firebaseMessagingService.squadNewMemberJoined(squad);
     }
 
-    // 승인하기
     public void approveParticipant(User user, Long userId, Long sqaudId) {
         Squad squad = findSquad(sqaudId);
         User participantUser = findUser(userId);
@@ -127,7 +145,6 @@ public class SquadService extends ASquadService {
         squadParticipantRepository.save(participant);
     }
 
-    // 거절하기
     public void rejectParticipant(User user, Long userId, Long sqaudId) {
         Squad squad = findSquad(sqaudId);
         User participantUser = findUser(userId);
@@ -142,7 +159,6 @@ public class SquadService extends ASquadService {
         squadParticipantRepository.save(participant);
     }
 
-    // 내보내기
     public void kickOffParticipant(User user, Long userId, Long sqaudId) {
         Squad squad = findSquad(sqaudId);
         User participantUser = findUser(userId);
@@ -159,7 +175,6 @@ public class SquadService extends ASquadService {
         squadParticipantRepository.save(participant);
     }
 
-    // 모임에서 나오기
     @Transactional
     public void kickOffParticipant(User user, Long sqaudId) {
         Squad squad = findSquad(sqaudId);

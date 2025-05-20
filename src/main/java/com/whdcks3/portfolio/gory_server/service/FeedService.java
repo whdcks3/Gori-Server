@@ -1,6 +1,7 @@
 package com.whdcks3.portfolio.gory_server.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -48,8 +49,6 @@ public class FeedService {
     private final BlockRespository blockRespository;
     private final S3FileService s3FileService;
 
-    // Feed CUD
-
     public FeedSimpleDto createFeed(FeedRequest req, User user) {
         List<FeedImage> images = req.getAddedImages().stream().map(image -> new FeedImage(image.getOriginalFilename()))
                 .toList();
@@ -71,6 +70,8 @@ public class FeedService {
         Feed feed = feedRepository.findById(feedId).orElseThrow(null);
         validateUser(user, feed);
 
+        System.out.println(req.getDeletedImages());
+
         if (req.getDeletedImages() != null) {
             deleteImages(req.getDeletedImages());
         }
@@ -87,13 +88,11 @@ public class FeedService {
         validateUser(user, feed);
         List<FeedImage> images = feedImageRepository.findByFeed(feed);
         images.forEach(image -> {
-            // fileService.delete(image.getImageUrl());
             s3FileService.deleteFile(image.getImageUrl());
             feedImageRepository.delete(image);
         });
         feedRepository.delete(feed);
     }
-    // Feed fetch
 
     public DataResponse othersFeed(Long userId, Long otherId, Pageable pageable) {
         User other = userRepository.findById(otherId).orElseThrow(null);
@@ -104,7 +103,6 @@ public class FeedService {
         return new DataResponse(feeds.hasNext(), feedDtos);
     }
 
-    // public DataResponse feeds(User user, int page, String category) {
     public DataResponse homeFeed(User user, Pageable pageable, String category) {
         List<User> excludedUsers = new ArrayList<>();
         if (user != null) {
@@ -124,7 +122,6 @@ public class FeedService {
         System.out.println("count: " + feeds.getSize());
         boolean hasNext = feeds.hasNext();
         System.out.println("feed content size: " + feeds.getContent().size());
-        // boolean hasNext = ((long) Math.ceil((double) feeds.size() / 20)) > page + 1;
         List<FeedSimpleDto> feedDtos = feeds.getContent().stream()
                 .map(f -> FeedSimpleDto.toDto(f, user.getPid(), hasFeedLike(user, f))).toList();
         System.out.println("count2: " + feedDtos.size());
@@ -138,8 +135,6 @@ public class FeedService {
                 .map(f -> FeedSimpleDto.toDto(f, userId, hasFeedLike(user, f))).toList();
         return new DataResponse(feeds.hasNext(), feedDtos);
     }
-
-    // Feed Like START
 
     @Transactional
     public FeedLikeDto processFeedLike(Long uId, Long fId) {
@@ -179,9 +174,6 @@ public class FeedService {
         return feedLikeRepository.existsByFeedAndUser(feed, user);
     }
 
-    // Feed Like END
-
-    // Comments start
     public Long writeComment(Long uid, FeedCommentRequest req) {
         User user = userRepository.findById(uid).get();
         Feed feed = feedRepository.findById(req.getFeedPid()).get();
@@ -219,7 +211,6 @@ public class FeedService {
         return new DataResponse(hasNext, replies);
     }
 
-    // TODO : comments delete,차단기능
     @Transactional
     public void deleteComment(Long commentId, Long userId) {
         FeedComment comment = feedCommentRepository.findByParentCommentPidAndPid(commentId,
@@ -264,19 +255,14 @@ public class FeedService {
         deleteFeedByUser(user);
     }
 
-    // Validations
-
     public void validateUser(User user, Feed feed) {
         if (!user.equals(feed.getUser())) {
             throw new MemberNotEqualsException();
         }
     }
 
-    // Process Images
-
     private void saveFeedImages(Feed feed, List<MultipartFile> images) {
         List<FeedImage> feedImages = images.stream().map(image -> {
-            // String filename = fileService.upload(image);
             String filename = s3FileService.uploadFile(image);
             FeedImage feedImage = new FeedImage(filename, feed);
             return feedImage;
@@ -287,7 +273,6 @@ public class FeedService {
 
     private void deleteImages(List<String> imageUrls) {
         imageUrls.forEach(imageUrl -> {
-            // fileService.delete(imageUrl);
             s3FileService.deleteFile(imageUrl);
             feedImageRepository.deleteByImageUrl(imageUrl);
         });

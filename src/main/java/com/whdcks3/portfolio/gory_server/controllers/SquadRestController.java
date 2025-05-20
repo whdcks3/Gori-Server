@@ -58,16 +58,14 @@ public class SquadRestController {
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> mySquads(@AuthenticationPrincipal User user,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC, size = 10) Pageable pageable) {
-        squadService.mySquads(user, pageable);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(squadService.mySquads(user, pageable));
     }
 
     @GetMapping("/home")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> homeSquads(@AuthenticationPrincipal User user, @ModelAttribute SquadFilterRequest req,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC, size = 10) Pageable pageable) {
-        squadService.homeSquads(user, req, pageable);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(squadService.homeSquads(user, req, pageable));
     }
 
     @GetMapping("/{sid}")

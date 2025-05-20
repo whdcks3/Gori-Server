@@ -14,7 +14,6 @@ public class WebSocketService {
 
     private final UserRepository userRepository;
 
-    // 메시지에 유저 닉네임 가져오기
     public User findByUsername(String username) {
         return userRepository.findByNickname(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User NotFound"));

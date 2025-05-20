@@ -96,7 +96,6 @@ public class AuthService {
         return user.get().getSnsType();
     }
 
-    // 코드 이메일 검증 및, 인증 유효시간 설정
     public boolean validateUser(String email, String code) {
         RandomCode randomCode = randomCodeRepository.findTopByEmailOrderByCreatedDesc(email);
         System.out.println(randomCode == null);
@@ -113,7 +112,6 @@ public class AuthService {
         return true;
     }
 
-    // 5번이상 인증 시 30분 잠금
     public boolean shouldLock(String email) {
         User user = userRepository.findByEmail(email).orElseThrow();
         if (user.isWithinLockedTime()) {
@@ -123,9 +121,7 @@ public class AuthService {
 
         LocalDateTime time = LocalDateTime.now();
 
-        // 1시간 이내 시도 횟수 삭제
         user.getAuthAttempts().removeIf(attempts -> attempts.isBefore(time.minusHours(1)));
-        // 시도 횟수 추가
         user.getAuthAttempts().add(time);
 
         if (user.getAuthAttempts().size() > 5) {
@@ -148,7 +144,6 @@ public class AuthService {
         System.out.println("비밀번호 초기화 완료");
     }
 
-    // 메일 인증 링크로 인한 계정 활성화
     public boolean activateUser(String token) {
         return emailVerificationRepository.findByToken(token)
                 .filter(verification -> verification.getExpiredAt().isAfter(LocalDateTime.now()))
@@ -163,7 +158,6 @@ public class AuthService {
                 .orElse(false);
     }
 
-    // 회원에게 이메일 보내기
     public void sendEmail(String email) {
 
         RandomCode existingCode = randomCodeRepository.findTopByEmailOrderByCreatedDesc(email);

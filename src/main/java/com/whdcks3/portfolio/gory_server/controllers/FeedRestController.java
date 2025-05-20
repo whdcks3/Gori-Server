@@ -47,13 +47,6 @@ public class FeedRestController {
     public ResponseEntity<?> createFeed(@AuthenticationPrincipal User user, @ModelAttribute FeedRequest req) {
         feedService.createFeed(req, user);
         return ResponseEntity.ok().build();
-        // try {
-        // feedService.createFeed(req, user);
-        // } catch (ValidationException e) {
-        // return ResponseEntity.ok().body(new CommonResponse(e.getStatusCode(),
-        // e.getMessage()));
-        // }
-        // return ResponseEntity.ok().body(new CommonResponse(100, "성공"));
     }
 
     @GetMapping("/{id}")
@@ -79,13 +72,6 @@ public class FeedRestController {
             @ModelAttribute FeedRequest req) {
         feedService.updateFeed(req, user, id);
         return ResponseEntity.ok().build();
-        // try {
-        // feedService.updateFeed(req, user, id);
-        // } catch (ValidationException e) {
-        // return ResponseEntity.ok().body(new CommonResponse(e.getStatusCode(),
-        // e.getMessage()));
-        // }
-        // return ResponseEntity.ok().body(new CommonResponse(100, "성공"));
     }
 
     // 피드 삭제
@@ -94,27 +80,12 @@ public class FeedRestController {
     public ResponseEntity<?> deleteFeed(@AuthenticationPrincipal User user, @PathVariable("id") Long fid) {
         feedService.deleteFeed(user, fid);
         return ResponseEntity.ok().build();
-        // try {
-        // feedService.deleteFeed(user, fid);
-        // } catch (ValidationException e) {
-        // return ResponseEntity.ok().body(new CommonResponse(e.getStatusCode(),
-        // e.getMessage()));
-        // }
-        // return ResponseEntity.ok().body(new CommonResponse(100, "성공"));
     }
 
     @GetMapping("/like/{id}")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> likeFeed(@AuthenticationPrincipal User user, @PathVariable Long id) {
-        feedService.processFeedLike(user.getPid(), id);
-        return ResponseEntity.ok().build();
-        // try {
-        // feedService.processFeedLike(Utils.getPid(), id);
-        // } catch (ValidationException e) {
-        // return ResponseEntity.ok().body(new CommonResponse(e.getStatusCode(),
-        // e.getMessage()));
-        // }
-        // return ResponseEntity.ok().body(new CommonResponse(100, "성공"));
+        return ResponseEntity.ok(feedService.processFeedLike(user.getPid(), id));
     }
 
     @Operation(summary = "나의 피드", security = @SecurityRequirement(name = "bearerAuth"))
@@ -122,25 +93,8 @@ public class FeedRestController {
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> mine(@AuthenticationPrincipal User user,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC, size = 10) Pageable pageable) {
-        feedService.myFeeds(user.getPid(), pageable);
-        return ResponseEntity.ok().build();
-        // try {
-        // feedService.myFeeds(Utils.getPid(), pageable);
-        // } catch (ValidationException e) {
-        // return ResponseEntity.ok().body(new CommonResponse(e.getStatusCode(),
-        // e.getMessage()));
-        // }
-        // return ResponseEntity.ok().body(new CommonResponse(100, "성공"));
+        return ResponseEntity.ok(feedService.myFeeds(user.getPid(), pageable));
     }
-
-    // @RequestMapping(value = "/home", method = RequestMethod.GET)
-    // public ResponseEntity<?> home(@RequestParam(value = "page", defaultValue =
-    // "0") int page,
-    // @RequestParam(value = "category", defaultValue = "전체") String category,
-    // @AuthenticationPrincipal User user) {
-    // System.out.println("user: " + (user != null));
-    // return ResponseEntity.ok().body(feedService.feeds(user, page, category));
-    // }
 
     @RequestMapping(value = "/home", method = RequestMethod.GET)
     @PreAuthorize("hasRole('USER')")
@@ -155,15 +109,8 @@ public class FeedRestController {
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> other(@AuthenticationPrincipal User user, @PathVariable Long id,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC, size = 10) Pageable pageable) {
-        feedService.othersFeed(user.getPid(), id, pageable);
-        return ResponseEntity.ok().build();
-        // try {
-        // feedService.othersFeed(Utils.getPid(), id, pageable);
-        // } catch (ValidationException e) {
-        // return ResponseEntity.ok().body(new CommonResponse(e.getStatusCode(),
-        // e.getMessage()));
-        // }
-        // return ResponseEntity.ok().body(new CommonResponse(100, "성공"));
+
+        return ResponseEntity.ok(feedService.othersFeed(user.getPid(), id, pageable));
     }
 
     @PostMapping("/createcomment")
@@ -179,13 +126,6 @@ public class FeedRestController {
             @AuthenticationPrincipal Long userId) {
         feedService.deleteComment(id, userId);
         return ResponseEntity.ok().build();
-        // try {
-        // feedService.deleteComment(id, userId);
-        // } catch (ValidationException e) {
-        // return ResponseEntity.ok().body(new CommonResponse(e.getStatusCode(),
-        // e.getMessage()));
-        // }
-        // return ResponseEntity.ok().body(new CommonResponse(100, "성공"));
     }
 
 }
