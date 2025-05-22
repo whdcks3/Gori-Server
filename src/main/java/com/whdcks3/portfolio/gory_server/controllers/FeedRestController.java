@@ -41,7 +41,6 @@ public class FeedRestController {
     @Autowired
     BlockService blockService;
 
-    // 피드 생성
     @PostMapping("/create")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> createFeed(@AuthenticationPrincipal User user, @ModelAttribute FeedRequest req) {
@@ -65,7 +64,6 @@ public class FeedRestController {
         return ResponseEntity.ok(feedService.getReplies(user, commentId, pageable));
     }
 
-    // 피드 수정
     @PutMapping("/modify/{id}")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> modifyFeed(@AuthenticationPrincipal User user, @PathVariable Long id,
@@ -74,7 +72,6 @@ public class FeedRestController {
         return ResponseEntity.ok().build();
     }
 
-    // 피드 삭제
     @DeleteMapping("/delete/{id}")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> deleteFeed(@AuthenticationPrincipal User user, @PathVariable("id") Long fid) {

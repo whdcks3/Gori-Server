@@ -55,7 +55,6 @@ public class AuthService {
             String imageName = "avatar_placeholder.png";
             User user = new User(req, passwordEncoder.encode(req.getSnsType() + req.getSnsId()), imageName);
             userRepository.save(user);
-
             sendActivationEmail(user);
         } catch (Exception e) {
             e.printStackTrace();
@@ -69,11 +68,7 @@ public class AuthService {
     public Map<String, String> authenticate(String email, String snsType, String snsId) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
-        // if (user == null || !passwordEncoder.matches(snsType + snsId,
-        // user.getPassword())) {
-        // throw new IllegalArgumentException("잘못된 소셜 계정입니다.");
-        // }
-        System.out.println("여기까지 인증 됨");
+        sendActivationEmail(user);
         return getTokensByUser(user);
     }
 
@@ -137,7 +132,7 @@ public class AuthService {
 
     public void resetPassword(String email, String rawPassword) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(null);
+                .orElseThrow(() -> new IllegalStateException("존재하지 않는 이메일입니다."));
         String encodedPassword = passwordEncoder.encode(rawPassword);
         user.setPassword(encodedPassword);
         userRepository.save(user);
@@ -162,7 +157,7 @@ public class AuthService {
 
         RandomCode existingCode = randomCodeRepository.findTopByEmailOrderByCreatedDesc(email);
         if (existingCode != null && !existingCode.isExpired()) {
-            System.out.println("이미 코드가 존재합니다" + existingCode.getCode());
+            System.out.println("이미 코드가 존재합니다: " + existingCode.getCode());
         }
 
         String code = String.valueOf(Math.abs(new Random().nextInt()) % 999999);
@@ -177,7 +172,6 @@ public class AuthService {
         System.out.println("생성 코드: " + code);
 
         RandomCode randomCode = new RandomCode(email, code);
-
         randomCodeRepository.save(randomCode);
     }
 
@@ -187,7 +181,6 @@ public class AuthService {
         if (user.getLockType().equals(LockType.NONE)) {
             throw new IllegalStateException("이미 활성화된 계정입니다.");
         }
-
         sendActivationEmail(user);
     }
 
@@ -196,30 +189,6 @@ public class AuthService {
         EmailVerification verification = new EmailVerification(user, token, LocalDateTime.now().plusHours(24),
                 false);
         emailVerificationRepository.save(verification);
-
         emailUtils.sendVerificationEmail(user.getEmail(), token);
     }
-    // char[] keys = new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
-    // };
-    // String createdKey = "";
-    // int pl = 0;
-    // for (int i = 0; i < 6; i++) {
-    // pl = (int) (Math.random() * keys.length);
-    // createdKey += keys[pl];
-    // }
-    // System.out.println("code:" + createdKey);
-
-    // 회원이 활성화 안되어있을 때 로그인 막기
-    // public boolean forbiddenLogin(String email) {
-    // Optional<User> login = userRepository.findByEmail(email);
-
-    // User user = login.get();
-
-    // if (!user.isActive()) {
-    // return false;
-    // }
-
-    // return false;
-    // }
-
 }

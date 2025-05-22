@@ -76,11 +76,8 @@ public class AuthRestController {
         System.out.println(email + ", " + snsType + ", " + snsId);
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(email, snsType + snsId));
-
         SecurityContextHolder.getContext().setAuthentication(authentication);
-
         return ResponseEntity.ok(authService.authenticate(email, snsType, snsId));
-        // return ResponseEntity.ok();
     }
 
     @PostMapping("/repassword")
@@ -95,7 +92,7 @@ public class AuthRestController {
         return ResponseEntity.ok(authService.refreshTokens(refreshToken));
     }
 
-    @PostMapping("/resend-token")
+    @PostMapping("/resend-email")
     public ResponseEntity<?> resendActivationToken(@RequestParam String email) {
         authService.resendActivationToken(email);
         return ResponseEntity.ok().build();

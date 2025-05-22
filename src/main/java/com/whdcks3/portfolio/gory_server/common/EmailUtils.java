@@ -4,19 +4,24 @@ import java.util.Date;
 
 import javax.mail.internet.MimeMessage;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-@AllArgsConstructor
 public class EmailUtils {
+
     private JavaMailSender mailSender;
+
+    public EmailUtils(JavaMailSender mailSender) {
+        this.mailSender = mailSender;
+    }
 
     public void sendVerificationEmail(String to, String token) {
         String subject = "[Gory] Email Verification for Sign-up";
@@ -31,7 +36,6 @@ public class EmailUtils {
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(content, true);
-
             mailSender.send(message);
         } catch (Exception e) {
             log.info("Fail");
@@ -57,4 +61,3 @@ public class EmailUtils {
         }
     }
 }
-// cfal ribj yaqt yhoa
