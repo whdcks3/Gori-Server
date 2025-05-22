@@ -18,7 +18,6 @@ import com.whdcks3.portfolio.gory_server.repositories.UserRepository;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 
-// OncePerRequestFilter requst중에서 필터링을 한번만 할수 있게 해줌
 @Component
 @RequiredArgsConstructor
 public class AuthTokenFilter extends OncePerRequestFilter {
@@ -52,13 +51,8 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             } catch (Exception e) {
                 SecurityContextHolder.clearContext();
                 throw new AuthenticationServiceException("유효하지 않은 토큰입니다.");
-                // response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                // response.setContentType("application/json; charset=UTF-8");
-                // response.getWriter().write("{\"message\": \"유효하지 않은 토큰입니다.\"}");
-                // return;
             }
         }
-        // 필터체인의 다음단계로 넘김
         filterChain.doFilter(request, response);
     }
 }

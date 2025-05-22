@@ -23,13 +23,13 @@ public class FeedCommentDto {
     private String content;
     private String datetime;
     private Long parentId;
-    private boolean isMine; // 현재 유저가 작성한 댓글인지
-    private List<FeedCommentDto> replies; // 대댓글
-    private boolean hasMoreReplies; // 2개 초과 여부
+    private boolean isMine;
+    private List<FeedCommentDto> replies;
+    private boolean hasMoreReplies;
 
     public static FeedCommentDto toDto(FeedComment comment, Long userId) {
         List<FeedCommentDto> allReplies = comment.getChildComments().stream()
-                .sorted(Comparator.comparing(BaseEntity::getCreatedAt)) // 시간순 정렬
+                .sorted(Comparator.comparing(BaseEntity::getCreatedAt))
                 .map(reply -> FeedCommentDto.toDto(reply, userId))
                 .toList();
 

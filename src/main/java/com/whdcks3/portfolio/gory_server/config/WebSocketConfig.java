@@ -23,15 +23,3 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws-chat").setAllowedOrigins("*").withSockJS();
     }
 }
-
-// public class WebSocketConfig implements WebSocketConfigurer {
-
-// private final WebSocketHandler webSocketHandler;
-
-// @Override
-// public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-
-// registry.addHandler(webSocketHandler, "/ws")
-// .setAllowedOriginPatterns("*");
-// }
-// }

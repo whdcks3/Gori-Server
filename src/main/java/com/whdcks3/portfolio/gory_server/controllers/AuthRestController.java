@@ -11,7 +11,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,7 +22,6 @@ import com.whdcks3.portfolio.gory_server.data.requests.SignupRequest;
 import com.whdcks3.portfolio.gory_server.data.responses.ErrorResponse;
 import com.whdcks3.portfolio.gory_server.repositories.UserRepository;
 import com.whdcks3.portfolio.gory_server.security.jwt.JwtUtils;
-import com.whdcks3.portfolio.gory_server.security.service.CustomUserDetails;
 import com.whdcks3.portfolio.gory_server.service.AuthService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -68,7 +66,6 @@ public class AuthRestController {
         System.out.println(req);
         if (!authService.signUp(req)) {
             return ResponseEntity.badRequest().body(new ErrorResponse(91, "회원 가입에 오류가 발생했습니다"));
-            // return ResponseEntity.badRequest().body("회원 가입에 오류가 발생했습니다");
         }
         return ResponseEntity.ok().build();
     }
@@ -90,13 +87,6 @@ public class AuthRestController {
     public ResponseEntity<?> rePassword(@RequestParam String email, @RequestParam String rawPassword) {
         authService.resetPassword(email, rawPassword);
         return ResponseEntity.ok().build();
-        // try {
-        // authService.resetPassword(email, rawPassword);
-        // } catch (ValidationException e) {
-        // return ResponseEntity.ok().body(new CommonResponse(e.getStatusCode(),
-        // e.getMessage()));
-        // }
-        // return ResponseEntity.ok().body(new CommonResponse(100, "성공"));
     }
 
     @PostMapping("/refresh")
@@ -105,47 +95,33 @@ public class AuthRestController {
         return ResponseEntity.ok(authService.refreshTokens(refreshToken));
     }
 
-    // 회원에게 활성화이메일 보내기
     @PostMapping("/resend-token")
     public ResponseEntity<?> resendActivationToken(@RequestParam String email) {
         authService.resendActivationToken(email);
         return ResponseEntity.ok().build();
     }
 
-    // 회원에게 이메일 보내기
     @PostMapping("/send")
     public ResponseEntity<?> sendEmail(@RequestParam String email) {
         authService.sendEmail(email);
         return ResponseEntity.ok().build();
     }
 
-    // 회원 이메일,코드 유효성 인증
     @PostMapping("/validate")
     public ResponseEntity<?> validatingUser(@RequestParam String email, @RequestParam String code) {
         authService.validateUser(email, code);
         return ResponseEntity.ok().build();
-        // try {
-        // authService.validateUser(email, code);
-        // } catch (ValidationException e) {
-        // return ResponseEntity.ok().body(new CommonResponse(e.getStatusCode(),
-        // e.getMessage()));
-        // }
-        // return ResponseEntity.ok().body(new CommonResponse(100, "성공"));
     }
 
-    // 회원 토큰으로 인한 활성화
-    // 재테스트 필요
     @GetMapping("/activate")
     public ResponseEntity<?> activateUser(@RequestParam String token) {
         return authService.activateUser(token) ? ResponseEntity.ok("Your account has been activated.")
                 : ResponseEntity.badRequest().body("Invalid authentication token.");
     }
 
-    // 다중인증(최대 5회) 시 계정 잠금
     @PostMapping("/multiauth")
     public ResponseEntity<?> multiAuthentication(@RequestParam String email) {
         authService.shouldLock(email);
         return ResponseEntity.ok().build();
-        // return ResponseEntity.ok().body(new CommonResponse(100, "성공"));
     }
 }

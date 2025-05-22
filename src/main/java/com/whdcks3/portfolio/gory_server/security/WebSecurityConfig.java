@@ -24,9 +24,6 @@ import com.whdcks3.portfolio.gory_server.security.service.CustomerUserDetailsSer
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfig {
 
-    // @Autowired
-    // CustomUserDetails customUserDetails;
-
     @Autowired
     CustomerUserDetailsServiceImpl customerUserDetailsServiceImpl;
 
@@ -35,12 +32,6 @@ public class WebSecurityConfig {
 
     @Autowired
     private AuthTokenFilter authTokenFilter;
-
-    // @Bean
-    // public AuthTokenFilter authenticationJwtTokenFilter() {
-    // System.out.println("LOGGING authencationJwtTokenFilter");
-    // return new AuthTokenFilter();
-    // }
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
@@ -52,7 +43,6 @@ public class WebSecurityConfig {
         return authProvider;
     }
 
-    // 비밀번호를 암호화하고 검증할 때 사용
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -68,15 +58,10 @@ public class WebSecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         System.out.println("LOGGING filterChain started");
         http.cors().and().csrf().disable()
-                // .httpBasic().disable()
-                // 인증되지 않은 요청이 발생했을 때 AuthEntryPointJwt가 처리
                 .exceptionHandling().authenticationEntryPoint(unauthorizedHandler)
                 .and()
-                // 모든 요청에 대해 JWT 토큰 인증
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-                // .authorizeRequests().anyRequest().permitAll();
-                .authorizeRequests() // 요청별 인증 규칙
-                // /api/auth/**는 인증 없이 접근 가능, 나머지 요청은 인증 필요
+                .authorizeRequests()
                 .antMatchers("/api/auth/**", "/api/user/**", "/api/feed/**", "/api/squad/**", "/swagger-ui/**",
                         "/webjars/**", "/swagger-ui.html", "/v3/api-docs/**", "/ws/**", "/api/push/**")
                 .permitAll().anyRequest()
@@ -84,30 +69,7 @@ public class WebSecurityConfig {
 
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
-
-        // .sessionManagement(
-        // s ->
-        // s.sessionFixation(SessionManagementConfigurer.SessionFixationConfigurer::changeSessionId)
-        // .sessionCreationPolicy(SessionCreationPolicy.ALWAYS).maximumSessions(50000000)
-        // .maxSessionsPreventsLogin(false).expiredUrl("/"));
         System.out.println("LOGGING filterChain ended");
         return http.build();
     }
-
-    // @Bean
-    // public CorsConfigurationSource corsConfigurationSource() {
-    // CorsConfiguration configuration = new CorsConfiguration();
-    // configuration.setAllowedOrigins(Arrays.asList("https://gory.limchanghwi.com"));
-    // configuration.setAllowedMethods(Arrays.asList("POST", "GET", "PUT",
-    // "DELETE"));
-    // configuration.setAllowedHeaders(Arrays.asList("*"));
-    // configuration.setAllowCredentials(true);
-    // configuration.setMaxAge(3600L);
-    // ;
-
-    // UrlBasedCorsConfigurationSource source = new
-    // UrlBasedCorsConfigurationSource();
-    // source.registerCorsConfiguration("/**", configuration);
-    // return source;
-    // }
 }

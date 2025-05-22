@@ -41,6 +41,4 @@ public class SignupRequest {
     private LocalDate birth;
 
     private String receiveEvent;
-    // @NotNull
-    // private OAuthProvider oauthProvider;
 }

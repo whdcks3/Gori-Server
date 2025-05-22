@@ -20,21 +20,18 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage(), e);
     }
 
-    // 제약 조건 불일치 시 발생
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<Map<String, Object>> handleConstraintViolationArgumentException(
             ConstraintViolationException e) {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage(), e);
     }
 
-    // @RequestBody 또는 @Valid 를 사용해서 DTO의 유효성 검사를 수행할 때 발생
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleMethodArgumentNotValidException(
             MethodArgumentNotValidException e) {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage(), e);
     }
 
-    // @ModelAttribute 를 사용해서 DTO의 유효성 검사를 수행할 때 발생
     @ExceptionHandler(BindException.class)
     public ResponseEntity<Map<String, Object>> handleBindArgumentException(BindException e) {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage(), e);

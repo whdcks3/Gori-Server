@@ -22,18 +22,18 @@ import lombok.Setter;
 public class SquadDetailDto {
     private static String[] days = { "월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일" };
 
-    private String status; // 모집상태
-    private String category; // 카테고리 분류
-    private String title; // 스쿼드 모집 제목
-    private String notice; // 본문 내용
-    private String datetime; // 모집 일시
-    private String region; // 모집 지역
-    private String genderRequirement; // 성별 제한
-    private String ageRequirement; // 나이 제한
-    private int maxParticipantCount; // 최대참여자수
-    private boolean isOwner; // 방장 권한
-    private boolean hasPendingUsers; // 참여대기중인 유저
-    private List<UserSimpleDto> participants; // 참여자
+    private String status;
+    private String category;
+    private String title;
+    private String notice;
+    private String datetime;
+    private String region;
+    private String genderRequirement;
+    private String ageRequirement;
+    private int maxParticipantCount;
+    private boolean isOwner;
+    private boolean hasPendingUsers;
+    private List<UserSimpleDto> participants;
     private long ownerId;
     private String btnMsg;
     private boolean btnEnabled;
@@ -114,7 +114,6 @@ public class SquadDetailDto {
     }
 
     private static String formatDatetime(Squad squad) {
-        // String dayOfWeek = days[squad.getDate().getDayOfWeek().getValue() - 1];
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy년 M월 d일 EEEE", Locale.KOREAN);
         String dateStr = squad.getDate().format(dateFormatter);
         if (squad.getTime() == null) {

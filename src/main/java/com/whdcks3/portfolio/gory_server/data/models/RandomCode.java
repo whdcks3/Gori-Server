@@ -43,7 +43,6 @@ public class RandomCode {
     }
 
     public boolean isExpired() {
-        // return true;
         return created.plusMinutes(10).isBefore(LocalDateTime.now());
     }
 

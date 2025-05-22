@@ -34,7 +34,6 @@ import io.jsonwebtoken.UnsupportedJwtException;
 
 @Component
 public class JwtUtils {
-    // JWT 작업에서 발생하는 문제 로깅
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
 
     private static final String PRIVATE_KEY_PATH = "src/main/resources/keys/private_key.pem";
@@ -119,7 +118,6 @@ public class JwtUtils {
                 .compact();
     }
 
-    // JWT 유효성 검증
     public Claims validateJwtToken(String authToken) {
         try {
             return Jwts.parserBuilder()

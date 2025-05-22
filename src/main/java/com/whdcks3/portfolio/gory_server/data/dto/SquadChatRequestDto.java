@@ -14,7 +14,6 @@ import lombok.Data;
 @AllArgsConstructor
 public class SquadChatRequestDto {
 
-    // private MessageType type;
     private Long squadId;
     private Long squadChatId;
     private Long sender;

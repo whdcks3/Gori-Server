@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.whdcks3.portfolio.gory_server.data.models.user.User;
 import com.whdcks3.portfolio.gory_server.repositories.UserRepository;
-import com.whdcks3.portfolio.gory_server.security.service.CustomUserDetails;
 import com.whdcks3.portfolio.gory_server.service.UserService;
 import org.springframework.web.bind.annotation.PutMapping;
 
@@ -30,13 +29,6 @@ public class UserRestController {
     public ResponseEntity<?> generateUserName() {
         userService.generateNickname();
         return ResponseEntity.ok().build();
-        // try {
-        // userService.generateNickname();
-        // } catch (ValidationException e) {
-        // return ResponseEntity.ok().body(new CommonResponse(e.getStatusCode(),
-        // e.getMessage()));
-        // }
-        // return ResponseEntity.ok().body(new CommonResponse(100, "성공"));
     }
 
     @PutMapping("/update_nickname")
@@ -49,13 +41,6 @@ public class UserRestController {
     public ResponseEntity<?> limitName(Authentication authentication, @RequestParam String user) {
         userService.limitNickname(user);
         return ResponseEntity.ok().build();
-        // try {
-        // return ResponseEntity.ok().body(new CommonResponse(100,
-        // userService.limitNickname(user)));
-        // } catch (ValidationException e) {
-        // return ResponseEntity.ok().body(new CommonResponse(e.getStatusCode(),
-        // e.getMessage()));
-        // }
     }
 
     @PostMapping("/find_account")
@@ -73,13 +58,6 @@ public class UserRestController {
             @RequestParam String snsId, @RequestParam String password) {
         userService.modifyPassword(email, snsType, snsId, password);
         return ResponseEntity.ok().build();
-        // try {
-        // userService.modifyPassword(email, snsType, snsId, password);
-        // } catch (ValidationException e) {
-        // return ResponseEntity.ok().body(new CommonResponse(e.getStatusCode(),
-        // e.getMessage()));
-        // }
-        // return ResponseEntity.ok().body(new CommonResponse(100, "성공"));
     }
 
     @PutMapping("/update_fcm")

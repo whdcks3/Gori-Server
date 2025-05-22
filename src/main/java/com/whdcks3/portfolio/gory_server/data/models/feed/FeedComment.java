@@ -49,9 +49,6 @@ public class FeedComment extends BaseEntity {
     @JsonManagedReference
     private List<FeedComment> childComments = new ArrayList<>();
 
-    // 댓글의 댓글의 댓글은 없고
-    // 원댓의 댓글까지만 존재..
-
     @lombok.Builder
     public FeedComment(User user, Feed feed, String content, FeedComment parentComment) {
         this.user = user;
