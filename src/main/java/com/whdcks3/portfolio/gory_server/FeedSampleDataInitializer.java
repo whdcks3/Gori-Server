@@ -7,8 +7,6 @@ import java.util.Random;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-import com.whdcks3.portfolio.gory_server.data.models.feed.Feed;
-import com.whdcks3.portfolio.gory_server.data.models.user.User;
 import com.whdcks3.portfolio.gory_server.repositories.FeedRepository;
 import com.whdcks3.portfolio.gory_server.repositories.UserRepository;
 
