@@ -85,7 +85,7 @@ public class FeedRestController {
         return ResponseEntity.ok(feedService.processFeedLike(user.getPid(), id));
     }
 
-    @Operation(summary = "ÎÇòÏùò ÌîºÎìú", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "≥™¿« ««µÂ", security = @SecurityRequirement(name = "bearerAuth"))
     @RequestMapping(value = "/mine", method = RequestMethod.GET)
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> mine(@AuthenticationPrincipal User user,
@@ -97,7 +97,7 @@ public class FeedRestController {
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> home(@AuthenticationPrincipal User user,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC, size = 10) Pageable pageable,
-            @RequestParam(defaultValue = "Ï†ÑÏ≤¥") String category) {
+            @RequestParam(defaultValue = "¿¸√º") String category) {
         System.out.println("user: " + (user != null));
         return ResponseEntity.ok().body(feedService.homeFeed(user, pageable, category));
     }

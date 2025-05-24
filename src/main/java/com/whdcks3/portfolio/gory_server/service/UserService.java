@@ -88,7 +88,7 @@ public class UserService {
     }
 
     public String limitNickname(String nickname) {
-        String regex = "^[a-zA-Z0-9가-힣]{2,8}$";
+        String regex = "^[a-zA-Z0-9가-힣\\s]{2,8}$";
         if (!nickname.matches(regex)) {
             throw new ValidationException("올바르지 않은 형식의 이름입니다");
         } else {
@@ -101,7 +101,7 @@ public class UserService {
         EmailVerification verificationToken = new EmailVerification();
         String token = UUID.randomUUID().toString();
         verificationToken.setToken(token);
-        String EmailLink = "https://gory-server.seojongchan-dev.com/api/user/find_account?token="
+        String EmailLink = "https://gori-server.seojongchan-dev.com/api/user/find_account?token="
                 + verificationToken.getToken();
         emailUtils.sendEmail(email, "이메일 인증", "메일을 클릭해주세요: " + EmailLink);
     }

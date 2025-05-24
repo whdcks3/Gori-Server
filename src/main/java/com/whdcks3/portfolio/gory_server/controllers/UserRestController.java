@@ -27,8 +27,7 @@ public class UserRestController {
 
     @GetMapping("/generate_username")
     public ResponseEntity<?> generateUserName() {
-        userService.generateNickname();
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(userService.generateNickname());
     }
 
     @PutMapping("/update_nickname")
@@ -38,8 +37,8 @@ public class UserRestController {
     }
 
     @PostMapping("/limit_username")
-    public ResponseEntity<?> limitName(Authentication authentication, @RequestParam String user) {
-        userService.limitNickname(user);
+    public ResponseEntity<?> limitName(@AuthenticationPrincipal User user, @RequestParam String nickname) {
+        userService.limitNickname(nickname);
         return ResponseEntity.ok().build();
     }
 

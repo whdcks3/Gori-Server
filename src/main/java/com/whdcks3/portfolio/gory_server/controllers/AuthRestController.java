@@ -111,9 +111,10 @@ public class AuthRestController {
     }
 
     @GetMapping("/activate")
-    public ResponseEntity<?> activateUser(@RequestParam String token) {
+    public ResponseEntity<?> activateUser(@RequestParam() String token) {
+        System.out.println("여기까지는 온거임");
         return authService.activateUser(token) ? ResponseEntity.ok("Your account has been activated.")
-                : ResponseEntity.badRequest().body("Invalid authentication token.");
+                : ResponseEntity.ok().body("Invalid authentication token.");
     }
 
     @PostMapping("/multiauth")

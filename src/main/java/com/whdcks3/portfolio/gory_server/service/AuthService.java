@@ -151,6 +151,7 @@ public class AuthService {
                     return true;
                 })
                 .orElse(false);
+
     }
 
     public void sendEmail(String email) {
@@ -190,5 +191,8 @@ public class AuthService {
                 false);
         emailVerificationRepository.save(verification);
         emailUtils.sendVerificationEmail(user.getEmail(), token);
+        if (token == verification.getToken()) {
+            verification.getUser().setLockType(LockType.NONE);
+        }
     }
 }

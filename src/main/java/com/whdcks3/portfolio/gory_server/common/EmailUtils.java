@@ -24,8 +24,8 @@ public class EmailUtils {
     }
 
     public void sendVerificationEmail(String to, String token) {
-        String subject = "[Gory] Email Verification for Sign-up";
-        String verificationLink = "https://gory-server.seojongchan-dev.com/api/auth/activate?token=" + token;
+        String subject = "[Gori] Email Verification for Sign-up";
+        String verificationLink = "https://gori-server.seojongchan-dev.com/api/auth/activate?token=" + token;
         String content = "<p>To complete your registration, please click the link below to verify your email address.</p>"
                 + "<a href=\"" + verificationLink + "\">Email verification link</a>";
 
