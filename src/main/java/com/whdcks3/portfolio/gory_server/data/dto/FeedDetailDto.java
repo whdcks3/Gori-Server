@@ -34,7 +34,7 @@ public class FeedDetailDto {
         String content = feed.getContent();
         List<String> images = feed.getImages().stream().map(image -> image.getImageUrl()).toList();
         Integer likeCount = feed.getLikeCount();
-        Integer commentCount = feed.getCommetCount();
+        Integer commentCount = feed.getCommentCount();
         Boolean isMine = feed.getUser().getPid() == userId;
         String datetime = feed.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         List<FeedCommentDto> comments = feed.getComments().stream()

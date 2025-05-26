@@ -60,14 +60,14 @@ public class FeedService {
     }
 
     public FeedDetailDto getFeed(User user, Long feedId) {
-        Feed feed = feedRepository.findById(feedId).orElseThrow(null);
+        Feed feed = feedRepository.findById(feedId).orElseThrow(() -> new RuntimeException("Feed not found"));
         boolean isLike = hasFeedLike(user, feed);
         return FeedDetailDto.toDto(feed, user.getPid(), isLike);
     }
 
     @Transactional
     public FeedSimpleDto updateFeed(FeedRequest req, User user, Long feedId) {
-        Feed feed = feedRepository.findById(feedId).orElseThrow(null);
+        Feed feed = feedRepository.findById(feedId).orElseThrow(() -> new RuntimeException("Feed not found"));
         validateUser(user, feed);
 
         System.out.println(req.getDeletedImages());
@@ -95,8 +95,9 @@ public class FeedService {
     }
 
     public DataResponse othersFeed(Long userId, Long otherId, Pageable pageable) {
-        User other = userRepository.findById(otherId).orElseThrow(null);
-        User user = userRepository.findById(userId).orElseThrow(null);
+        User other = userRepository.findById(otherId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         Page<Feed> feeds = feedRepository.findByUser(other, pageable);
         List<FeedSimpleDto> feedDtos = feeds.getContent().stream()
                 .map(f -> FeedSimpleDto.toDto(f, userId, hasFeedLike(user, f))).toList();
@@ -138,8 +139,8 @@ public class FeedService {
 
     @Transactional
     public FeedLikeDto processFeedLike(Long uId, Long fId) {
-        User user = userRepository.findById(uId).orElseThrow(null);
-        Feed feed = feedRepository.findById(fId).orElseThrow(null);
+        User user = userRepository.findById(uId).orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        Feed feed = feedRepository.findById(fId).orElseThrow(() -> new RuntimeException("Feed not found"));
         boolean isNew = !hasFeedLike(user, feed);
         if (isNew) {
             feed.increaseLikeCount();
@@ -160,7 +161,7 @@ public class FeedService {
         boolean isAlarm = feed.getUser().getFeedLikeAlarm();
         String title = "게시글 좋아요";
         String content = String.format("회원님의 게시글 [%s]를 좋아합니다.",
-                feed.getContent().substring(0, Math.max(20, feed.getContent().length())));
+                feed.getContent().substring(0, Math.min(20, feed.getContent().length())));
         String data = feed.getPid() + ",feed";
         sendPushToClient(isAlarm, fcmToken, title, content, data);
     }
@@ -203,19 +204,31 @@ public class FeedService {
     public DataResponse getReplies(User user, Long parentId, Pageable pageable) {
         Page<FeedComment> page = feedCommentRepository.findByParentCommentPid(parentId, pageable);
         boolean hasNext = page.hasNext();
-
         List<FeedCommentDto> replies = page.getContent().stream()
                 .map(reply -> FeedCommentDto.toDto(reply, user.getPid()))
                 .toList();
-
         return new DataResponse(hasNext, replies);
     }
 
     @Transactional
-    public void deleteComment(Long commentId, Long userId) {
-        FeedComment comment = feedCommentRepository.findByParentCommentPidAndPid(commentId,
-                userId).orElseThrow(null);
+    public void deleteComment(Long uid, Long commentId) {
+        FeedComment comment = feedCommentRepository.findByParentCommentPidAndPid(uid, commentId)
+                .orElseThrow(() -> new IllegalArgumentException("댓글이 존재하지 않습니다."));
+        if (!comment.getUser().getPid().equals(uid)) {
+            throw new IllegalArgumentException("삭제 권한이 없습니다.");
+        }
+        if (comment.getParentComment() == null) {
+            deleteChildcomment(comment);
+        }
         feedCommentRepository.delete(comment);
+    }
+
+    @Transactional
+    private void deleteChildcomment(FeedComment comment) {
+        for (FeedComment child : comment.getChildComments()) {
+            deleteChildcomment(child);
+            feedCommentRepository.delete(child);
+        }
     }
 
     @Transactional

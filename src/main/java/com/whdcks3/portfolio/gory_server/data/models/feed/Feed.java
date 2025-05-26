@@ -59,7 +59,7 @@ public class Feed extends BaseEntity {
     private int viewCount = 0;
 
     @Column(nullable = false)
-    private int commetCount = 0;
+    private int commentCount = 0;
 
     @Column(nullable = false)
     private int reportCount = 0;
@@ -93,11 +93,11 @@ public class Feed extends BaseEntity {
     }
 
     public void decreaseCommentCount() {
-        this.commetCount -= 1;
+        this.commentCount -= 1;
     }
 
     public void increaseCommentCount() {
-        this.commetCount += 1;
+        this.commentCount += 1;
     }
 
     public void increaseReportCount() {

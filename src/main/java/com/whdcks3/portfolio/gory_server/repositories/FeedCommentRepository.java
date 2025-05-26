@@ -13,7 +13,7 @@ import com.whdcks3.portfolio.gory_server.data.models.user.User;
 
 @Repository
 public interface FeedCommentRepository extends JpaRepository<FeedComment, Long> {
-    Optional<FeedComment> findByParentCommentPidAndPid(Long feedCommentId, Long pid);
+    Optional<FeedComment> findByParentCommentPidAndPid(Long feedCommentId, Long uid);
 
     Page<FeedComment> findByParentCommentPid(Long parentId, Pageable pageable);
 

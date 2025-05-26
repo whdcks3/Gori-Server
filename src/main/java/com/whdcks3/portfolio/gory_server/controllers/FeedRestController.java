@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.whdcks3.portfolio.gory_server.data.models.feed.FeedComment;
 import com.whdcks3.portfolio.gory_server.data.models.user.User;
 import com.whdcks3.portfolio.gory_server.data.requests.FeedCommentRequest;
 import com.whdcks3.portfolio.gory_server.data.requests.FeedRequest;
@@ -26,6 +27,7 @@ import com.whdcks3.portfolio.gory_server.service.BlockService;
 import com.whdcks3.portfolio.gory_server.service.FeedService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -50,7 +52,7 @@ public class FeedRestController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> getFeed(@AuthenticationPrincipal User user, @PathVariable Long id) {
+    public ResponseEntity<?> getFeed(@AuthenticationPrincipal User user, @PathVariable("id") Long id) {
         return ResponseEntity.ok().body(feedService.getFeed(user, id));
     }
 
@@ -60,7 +62,6 @@ public class FeedRestController {
             @AuthenticationPrincipal User user,
             @PathVariable Long commentId,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.ASC, size = 10) Pageable pageable) {
-
         return ResponseEntity.ok(feedService.getReplies(user, commentId, pageable));
     }
 
@@ -119,9 +120,8 @@ public class FeedRestController {
 
     @DeleteMapping("/deletecomment/{id}")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> deleteComment(@PathVariable Long id,
-            @AuthenticationPrincipal Long userId) {
-        feedService.deleteComment(id, userId);
+    public ResponseEntity<?> deleteComment(@AuthenticationPrincipal User user, @PathVariable Long id) {
+        feedService.deleteComment(user.getPid(), id);
         return ResponseEntity.ok().build();
     }
 
