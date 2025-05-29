@@ -47,7 +47,8 @@ public class SquadParticipant {
     private SquadParticipant(User user, Squad squad) {
         this.user = user;
         this.squad = squad;
-        this.status = squad.getJoinType().equals(JoinType.DIRECT) ? SquadParticipationStatus.JOINED
+        this.status = squad.getUser().getPid() == user.getPid() || squad.getJoinType().equals(JoinType.DIRECT)
+                ? SquadParticipationStatus.JOINED
                 : SquadParticipationStatus.PENDING;
     }
 

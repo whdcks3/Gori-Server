@@ -40,9 +40,9 @@ public class SquadRestController {
 
     @PutMapping("/modify/{id}")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> modifySquad(@RequestParam Long id, @PathVariable Long sid,
+    public ResponseEntity<?> modifySquad(@AuthenticationPrincipal User user, @PathVariable Long sid,
             @RequestBody SquadRequest req) {
-        squadService.modifySquad(id, sid, req);
+        squadService.modifySquad(user.getPid(), sid, req);
         return ResponseEntity.ok().build();
     }
 

@@ -57,10 +57,6 @@ public class User extends BaseEntity {
     @Size(max = 120)
     private String snsId;
 
-    // @Enumerated(EnumType.STRING)
-    // @Column(nullable = false)
-    // private OAuthProvider oauthProvider;
-
     private String carrier;
 
     @Size(max = 20)
@@ -85,11 +81,6 @@ public class User extends BaseEntity {
     @Column(nullable = false, columnDefinition = "VARCHAR(256) DEFAULT ''")
     private String imageUrl, introduction;
 
-    // @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.DETACH)
-    // @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_pid"),
-    // inverseJoinColumns = @JoinColumn(name = "role_id"))
-    // private Set<Role> roles;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
@@ -103,12 +94,9 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private LockType lockType;
 
-    // 계정 인증메일 기록
     @ElementCollection
     @CollectionTable(name = "email_auth_attempts", joinColumns = @JoinColumn(name = "email"))
     private List<LocalDateTime> authAttempts = new ArrayList<>();
-
-    // 잠금 해제 시간
 
     @Column
     private LocalDateTime lockedUntil;
@@ -144,13 +132,7 @@ public class User extends BaseEntity {
         if (imageUrl.contains("avatar_placeholder")) {
             return;
         }
-        // TODO: delete profile image
-        // new File(imageUrl).delete();
     }
-
-    // public void setAlarm() {
-    // feedAlarm = !feedAlarm;
-    // }
 
     public void increaseReportCount() {
         this.reportCount++;

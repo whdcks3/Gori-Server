@@ -1,6 +1,7 @@
 package com.whdcks3.portfolio.gory_server.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -46,6 +47,9 @@ public class UserService {
 
     @Autowired
     ChatroomService chatroomService;
+
+    @Value("${server.url}")
+    private String serverUrl;
 
     public String generateNickname() {
         String[] name1 = { "넉살좋은", "발랄한", "산뜻한", "아리따운", "적극적인", "착한", "훌륭한", "고요한", "낙천적인", "부드러운", "수려한", "어린",
@@ -101,7 +105,7 @@ public class UserService {
         EmailVerification verificationToken = new EmailVerification();
         String token = UUID.randomUUID().toString();
         verificationToken.setToken(token);
-        String EmailLink = "https://gori-server.seojongchan-dev.com/api/user/find_account?token="
+        String EmailLink = serverUrl + "/api/user/find_account?token="
                 + verificationToken.getToken();
         emailUtils.sendEmail(email, "이메일 인증", "메일을 클릭해주세요: " + EmailLink);
     }

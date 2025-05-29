@@ -4,8 +4,15 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,7 +30,7 @@ import com.whdcks3.portfolio.gory_server.repositories.UserRepository;
 import com.whdcks3.portfolio.gory_server.security.jwt.JwtUtils;
 import com.whdcks3.portfolio.gory_server.security.service.CustomerUserDetailsServiceImpl;
 
-import java.util.Random;
+import io.jsonwebtoken.Claims;
 
 @Service
 public class AuthService {
@@ -49,6 +56,9 @@ public class AuthService {
     @Autowired
     JwtUtils jwtUtils;
 
+    @Autowired
+    AuthenticationManager authenticationManager;
+
     public boolean signUp(SignupRequest req) {
         System.out.println("Start signing up!");
         try {
@@ -68,6 +78,13 @@ public class AuthService {
     public Map<String, String> authenticate(String email, String snsType, String snsId) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+        if (!passwordEncoder.matches(snsType + snsId, user.getPassword())) {
+            throw new AuthenticationCredentialsNotFoundException("다른 플랫폼을 통해 가입된 이메일입니다.");
+        }
+
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(email, snsType + snsId));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
         sendActivationEmail(user);
         return getTokensByUser(user);
     }
@@ -89,6 +106,13 @@ public class AuthService {
     public String getUserSnsType(String email) {
         Optional<User> user = userRepository.findByEmail(email);
         return user.get().getSnsType();
+    }
+
+    public String checkToken(String token) {
+        token = token.replace("Bearer ", "");
+        String email = jwtUtils.extractEmail(token);
+        userRepository.findByEmail(email).orElseThrow(() -> new IllegalStateException("존재하지 않는 이메일입니다."));
+        return token;
     }
 
     public boolean validateUser(String email, String code) {

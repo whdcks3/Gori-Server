@@ -7,6 +7,7 @@ import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -74,9 +75,6 @@ public class AuthRestController {
     public ResponseEntity<Map<String, String>> authenticateUser(@RequestParam String email,
             @RequestParam String snsType, @RequestParam String snsId) {
         System.out.println(email + ", " + snsType + ", " + snsId);
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(email, snsType + snsId));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
         return ResponseEntity.ok(authService.authenticate(email, snsType, snsId));
     }
 
@@ -84,6 +82,11 @@ public class AuthRestController {
     public ResponseEntity<?> rePassword(@RequestParam String email, @RequestParam String rawPassword) {
         authService.resetPassword(email, rawPassword);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/checkToken")
+    public ResponseEntity<?> checkToken(@RequestHeader("Authorization") String token) {
+        return ResponseEntity.ok(authService.checkToken(token));
     }
 
     @PostMapping("/refresh")
@@ -112,7 +115,6 @@ public class AuthRestController {
 
     @GetMapping("/activate")
     public ResponseEntity<?> activateUser(@RequestParam() String token) {
-        System.out.println("여기까지는 온거임");
         return authService.activateUser(token) ? ResponseEntity.ok("Your account has been activated.")
                 : ResponseEntity.ok().body("Invalid authentication token.");
     }

@@ -9,6 +9,7 @@ import javax.validation.ConstraintViolationException;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -45,6 +46,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<Map<String, Object>> handleValidationException(ValidationException e) {
         return buildErrorResponse(HttpStatus.FORBIDDEN, e.getMessage(), e);
+    }
+
+    @ExceptionHandler(AuthenticationCredentialsNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleAuthenticationCredentialsNotFoundException(
+            AuthenticationCredentialsNotFoundException e) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage(), e);
     }
 
     ResponseEntity<Map<String, Object>> buildErrorResponse(HttpStatus status, String message, Exception e) {

@@ -51,7 +51,7 @@ public class Squad extends BaseEntity {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 
-    private String title, category, regionMain, regionSub, description;
+    private String title, category, regionMain, regionSub;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "VARCHAR(10) DEFAULT 'ALL'")
@@ -73,7 +73,7 @@ public class Squad extends BaseEntity {
     private JoinType joinType;
 
     @Size(max = 1000)
-    private String notice;
+    private String description;
 
     @Column(nullable = true, columnDefinition = "INT DEFAULT 1")
     private int currentCount;

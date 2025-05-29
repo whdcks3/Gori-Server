@@ -31,6 +31,8 @@ public class EnvConfig implements EnvironmentPostProcessor {
         props.put("aws.s3.access-key", dotenv.get("AWS_ACCESS_KEY"));
         props.put("aws.s3.secret-key", dotenv.get("AWS_SECRET_KEY"));
 
+        props.put("server.url", dotenv.get("SERVER_URL"));
+
         environment.getPropertySources().addFirst(new MapPropertySource("dotenv", props));
     }
 }

@@ -5,6 +5,7 @@ import java.util.Date;
 import javax.mail.internet.MimeMessage;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -23,9 +24,12 @@ public class EmailUtils {
         this.mailSender = mailSender;
     }
 
+    @Value("${server.url}")
+    private String serverUrl;
+
     public void sendVerificationEmail(String to, String token) {
         String subject = "[Gori] Email Verification for Sign-up";
-        String verificationLink = "https://gori-server.seojongchan-dev.com/api/auth/activate?token=" + token;
+        String verificationLink = serverUrl + "/api/auth/activate?token=" + token;
         String content = "<p>To complete your registration, please click the link below to verify your email address.</p>"
                 + "<a href=\"" + verificationLink + "\">Email verification link</a>";
 
