@@ -101,6 +101,9 @@ public class User extends BaseEntity {
     @Column
     private LocalDateTime lockedUntil;
 
+    // @Column
+    // private boolean isAdmin;
+
     public User(SignupRequest req, String password, String imageUrl) {
         this.email = req.getEmail();
         this.password = password;
@@ -193,4 +196,10 @@ public class User extends BaseEntity {
     public boolean isFcmAbled() {
         return squadNotifyAlarm && fcmToken != null;
     }
+
+    // public void preventAgeChange() {
+    // if (this.isAdmin) {
+    // throw new IllegalStateException("관리자의 나이대는 수정할 수 없습니다.");
+    // }
+    // }
 }

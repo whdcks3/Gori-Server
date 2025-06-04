@@ -10,6 +10,8 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +27,9 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+
+import com.whdcks3.portfolio.gory_server.data.models.squad.Squad;
+import com.whdcks3.portfolio.gory_server.data.models.user.User;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -135,6 +140,16 @@ public class JwtUtils {
         } catch (Exception e) {
             throw new IllegalArgumentException("유효하지 않은 토큰입니다.");
         }
+    }
+
+    public String issueToken(User user, Squad squad) {
+        return Jwts.builder()
+                .setSubject(user.getPid().toString())
+                .claim("squadId", squad.getPid())
+                .setIssuedAt(new Date())
+                .setExpiration(Date.from(Instant.now().plus(Duration.ofMinutes(5))))
+                .signWith(privateKey, SignatureAlgorithm.RS256)
+                .compact();
     }
 
     public String extractEmail(String token) {

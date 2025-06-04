@@ -1,6 +1,7 @@
 package com.whdcks3.portfolio.gory_server.repositories;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -44,4 +45,10 @@ public interface SquadRepository extends JpaRepository<Squad, Long> {
                         Pageable pageable);
 
         List<Squad> findAllByUser(User user);
+
+        @Query("SELECT s FROM Squad s " +
+                        "LEFT JOIN FETCH s.participants p " +
+                        "LEFT JOIN FETCH p.user " +
+                        "WHERE s.pid = :squadId")
+        Optional<Squad> findByIdWithParticipants(@Param("squadId") Long squadId);
 }

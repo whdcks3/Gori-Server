@@ -50,7 +50,13 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (Exception e) {
                 SecurityContextHolder.clearContext();
-                throw new AuthenticationServiceException("유효하지 않은 토큰입니다.");
+
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                response.getWriter().write("{\"message\": \"" + e.getMessage() + "\"}");
+
+                return;
             }
         }
         filterChain.doFilter(request, response);

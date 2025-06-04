@@ -54,6 +54,12 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage(), e);
     }
 
+    @ExceptionHandler(JwtTokenException.class)
+    public ResponseEntity<Map<String, Object>> handleJwtTokenException(JwtTokenException e) {
+        System.out.println("JwtTokenException: " + e.getMessage());
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, e.getMessage(), e);
+    }
+
     ResponseEntity<Map<String, Object>> buildErrorResponse(HttpStatus status, String message, Exception e) {
         if (status == null) {
             status = HttpStatus.INTERNAL_SERVER_ERROR;

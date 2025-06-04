@@ -2,16 +2,22 @@ package com.whdcks3.portfolio.gory_server.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.amazonaws.services.kms.model.NotFoundException;
 import com.whdcks3.portfolio.gory_server.data.dto.SquadDetailDto;
 import com.whdcks3.portfolio.gory_server.data.dto.SquadFilterRequest;
 import com.whdcks3.portfolio.gory_server.data.dto.SquadSimpleDto;
+import com.whdcks3.portfolio.gory_server.data.dto.UserSimpleDto;
 import com.whdcks3.portfolio.gory_server.data.models.Block;
 import com.whdcks3.portfolio.gory_server.data.models.squad.Squad;
 import com.whdcks3.portfolio.gory_server.data.models.squad.SquadParticipant;
@@ -19,19 +25,25 @@ import com.whdcks3.portfolio.gory_server.data.models.squad.SquadParticipant.Squa
 import com.whdcks3.portfolio.gory_server.data.models.user.User;
 import com.whdcks3.portfolio.gory_server.data.requests.SquadRequest;
 import com.whdcks3.portfolio.gory_server.data.responses.DataResponse;
+import com.whdcks3.portfolio.gory_server.enums.JoinType;
 import com.whdcks3.portfolio.gory_server.repositories.BlockRespository;
 import com.whdcks3.portfolio.gory_server.repositories.SquadParticipantRepository;
 import com.whdcks3.portfolio.gory_server.repositories.SquadRepository;
 import com.whdcks3.portfolio.gory_server.repositories.UserRepository;
+import com.whdcks3.portfolio.gory_server.security.jwt.JwtUtils;
 import com.whdcks3.portfolio.gory_server.service.abtracts.ASquadService;
 
 @Service
 public class SquadService extends ASquadService {
     public SquadService(SquadRepository squadRepository, SquadParticipantRepository squadParticipantRepository,
             UserRepository userRepository, BlockRespository blockRespository,
-            FirebaseMessagingService firebaseMessagingService) {
-        super(squadRepository, squadParticipantRepository, userRepository, blockRespository, firebaseMessagingService);
+            FirebaseMessagingService firebaseMessagingService, JwtUtils jwtUtils) {
+        super(squadRepository, squadParticipantRepository, userRepository, blockRespository,
+                firebaseMessagingService, jwtUtils);
     }
+
+    @Autowired
+    JwtUtils jwtUtils;
 
     @Override
     public void createSquad(User user, SquadRequest req) {
@@ -43,8 +55,7 @@ public class SquadService extends ASquadService {
     }
 
     @Override
-    public void modifySquad(Long uid, Long squadId, SquadRequest req) {
-        User user = userRepository.findById(uid).orElseThrow();
+    public void modifySquad(User user, Long squadId, SquadRequest req) {
         Squad squad = findSquad(squadId);
         validateOwner(user, squad);
         validateAgeRange(squad, req);
@@ -73,16 +84,39 @@ public class SquadService extends ASquadService {
         return new DataResponse(squads.hasNext(), squadDtos);
     }
 
+    @Transactional
+    public Map<String, Object> joinOrGetChatToken(User user, Long squadId) {
+        Squad squad = squadRepository.findByIdWithParticipants(squadId)
+                .orElseThrow(() -> new NotFoundException("모임이 존재하지 않습니다."));
+
+        Optional<SquadParticipant> participantOpt = squadParticipantRepository.findByUserAndSquad(user, squad);
+
+        if (participantOpt.isPresent()) {
+            SquadParticipant participant = participantOpt.get();
+
+            if (participant.getStatus() == SquadParticipationStatus.JOINED) {
+                String chatToken = jwtUtils.issueToken(user, squad);
+                return Map.of("status", "joined", "chatToken", chatToken);
+            }
+
+            if (participant.getStatus() == SquadParticipationStatus.PENDING) {
+                return Map.of("status", "pending");
+            }
+
+            if (participant.getStatus() == SquadParticipationStatus.REJECTED) {
+                throw new IllegalStateException("참여가 거절된 모임입니다.");
+            }
+
+            if (participant.getStatus() == SquadParticipationStatus.KICKED_OUT) {
+                throw new AccessDeniedException("강제 퇴장된 유저입니다.");
+            }
+        }
+        joinSquad(user, squad);
+
+        return Map.of("status", squad.getJoinType().equals(JoinType.APPROVAL) ? "reqested" : "approved");
+    }
+
     public DataResponse homeSquads(User user, SquadFilterRequest req, Pageable pageable) {
-        // if (req.getCategory().equals("전체")) {
-        // req.setCategory("");
-        // }
-        // if (req.getRegionMain().equals("전체")) {
-        // req.setRegionMain("");
-        // }
-        // if (req.getRegionSub().equals("전체")) {
-        // req.setRegionSub("");
-        // }
         List<User> excludedUsers = new ArrayList<>();
         if (user != null) {
             excludedUsers = getExcludedUsers(user);
@@ -107,11 +141,28 @@ public class SquadService extends ASquadService {
         return SquadDetailDto.toDto(user, squad);
     }
 
-    // 참여하기
-    @Override
-    public void joinSquad(User user, Long sqaudId) {
-        Squad squad = findSquad(sqaudId);
+    public List<UserSimpleDto> getParticipants(User user, Long squadId) {
+        Squad squad = findSquad(squadId);
 
+        if (squad.getJoinType().equals(JoinType.DIRECT)) {
+            throw new AccessDeniedException("승인제가 아닙니다.");
+        }
+        validateOwner(user, squad);
+        return squad.getParticipants().stream()
+                .filter(participant -> participant.getStatus() == SquadParticipationStatus.PENDING)
+                .map(participant -> UserSimpleDto.toDto(participant.getUser()))
+                .collect(Collectors.toList());
+    }
+
+    public void closeSquad(User user, Long squadId) {
+        Squad squad = findSquad(squadId);
+        validateOwner(user, squad);
+        squad.setClosed(true);
+        squadRepository.save(squad);
+    }
+
+    @Override
+    public void joinSquad(User user, Squad squad) {
         validateAlreadyJoined(user, squad);
         validateIsClosed(squad);
         validateTimePassed(squad);
@@ -121,7 +172,8 @@ public class SquadService extends ASquadService {
 
         SquadParticipant squadParticipant = SquadParticipant.create(user, squad);
         squadParticipant = squadParticipantRepository.save(squadParticipant);
-        squad.getParticipants().add(squadParticipant);
+        squad.joinParticipant(squadParticipant);
+        squadRepository.save(squad);
 
         firebaseMessagingService.squadNewMemberJoined(squad);
     }

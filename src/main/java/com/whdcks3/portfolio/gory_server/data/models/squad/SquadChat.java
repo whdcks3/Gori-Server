@@ -1,22 +1,24 @@
 package com.whdcks3.portfolio.gory_server.data.models.squad;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import javax.validation.constraints.Size;
 
 import org.hibernate.annotations.DynamicInsert;
 
 import com.whdcks3.portfolio.gory_server.common.BaseEntity;
 import com.whdcks3.portfolio.gory_server.data.models.user.User;
+import com.whdcks3.portfolio.gory_server.enums.ChatType;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,20 +36,21 @@ import lombok.Setter;
 @DynamicInsert
 public class SquadChat extends BaseEntity {
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_pid")
     private User user;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "squad_pid")
     private Squad squad;
 
-    @Size(max = 1000)
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String message;
 
-    private int type = 0;
+    @Enumerated(EnumType.STRING)
+    private ChatType type = ChatType.TEXT;
 
-    @Column(nullable = true, columnDefinition = "INT DEFAULT 0")
+    @Column(columnDefinition = "INT DEFAULT 0")
     private int imageCount;
 
     @OneToMany(mappedBy = "squadChat", cascade = CascadeType.PERSIST, orphanRemoval = true)
@@ -56,59 +59,59 @@ public class SquadChat extends BaseEntity {
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT true")
     private boolean deletable;
 
-    // images only
-    @Builder
-    public SquadChat(User user, Squad squad, int count, List<SquadChatImage> images) {
-        this.user = user;
-        this.squad = squad;
-        this.imageCount = count;
-        this.message = "";
-        this.type = 1;
-        this.images = new ArrayList<>();
-        this.deletable = true;
-        addImages(images);
+    // 텍스트 메시지
+    public static SquadChat text(User user, Squad squad, String message) {
+        return SquadChat.builder()
+                .user(user)
+                .squad(squad)
+                .message(message)
+                .type(ChatType.TEXT)
+                .deletable(true)
+                .build();
     }
 
-    // text only
-    @Builder
-    public SquadChat(User user, Squad squad, String message) {
-        this.user = user;
-        this.squad = squad;
-        this.message = message;
-        this.type = 0;
-        this.deletable = true;
+    // 이미지 메시지
+    public static SquadChat image(User user, Squad squad, List<SquadChatImage> images) {
+        SquadChat chat = SquadChat.builder()
+                .user(user)
+                .squad(squad)
+                .imageCount(images.size())
+                .type(ChatType.IMAGE)
+                .message("")
+                .deletable(true)
+                .build();
+        chat.addImages(images);
+        return chat;
     }
 
-    // system message
-    @Builder
-    public SquadChat(Squad squad, String message) {
-        this.user = null;
-        this.squad = squad;
-        this.message = message;
-        this.type = 3;
-        this.deletable = false;
+    // 시스템 메시지 (입장/퇴장 등)
+    public static SquadChat system(Squad squad, String message) {
+        return SquadChat.builder()
+                .squad(squad)
+                .message(message)
+                .type(ChatType.SYSTEM)
+                .deletable(false)
+                .build();
     }
 
-    // date changes
-    @Builder
-    public SquadChat(Squad squad) {
+    // 날짜 메시지
+    public static SquadChat date(Squad squad, LocalDate date) {
         String[] days = { "월", "화", "수", "목", "금", "토", "일" };
-        this.user = null;
-        this.squad = squad;
-        this.message = String.format("%d. %02d. %02d (%s)", LocalDate.now().getYear(), LocalDate.now().getMonthValue(),
-                LocalDate.now().getDayOfMonth(), days[LocalDate.now().getDayOfWeek().getValue() - 1]);
-        this.type = 2;
-        this.deletable = false;
+        String formatted = String.format("%d. %02d. %02d (%s)", date.getYear(), date.getMonthValue(),
+                date.getDayOfMonth(), days[date.getDayOfWeek().getValue() - 1]);
+
+        return SquadChat.builder()
+                .squad(squad)
+                .message(formatted)
+                .type(ChatType.DATE)
+                .deletable(false)
+                .build();
     }
 
     public void delete() {
         this.deletable = false;
-        this.type = 0;
+        this.type = ChatType.TEXT;
         this.message = "삭제된 메시지입니다.";
-    }
-
-    private void deleteImages(List<SquadChatImage> deleted) {
-        deleted.stream().forEach(di -> this.images.remove(di));
     }
 
     private void addImages(List<SquadChatImage> added) {

@@ -1,5 +1,6 @@
 package com.whdcks3.portfolio.gory_server.repositories;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -37,5 +38,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Boolean existsByNicknameAndPidNot(String nickname, Long pid);
 
     Optional<User> findByNickname(String nickname);
+
+    List<User> findAllByPidIn(List<Long> pids);
 
 }

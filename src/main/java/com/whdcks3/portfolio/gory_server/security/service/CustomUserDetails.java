@@ -16,6 +16,8 @@ public class CustomUserDetails implements UserDetails {
 
     private static final long serialVersionUID = 1L;
 
+    private User user;
+
     private Long pid;
     private String email;
     private String nickname;
@@ -36,9 +38,11 @@ public class CustomUserDetails implements UserDetails {
 
     private Collection<? extends GrantedAuthority> authorities;
 
-    public CustomUserDetails(Long id, String email, String nickname, String password, String phone, String snsType,
+    public CustomUserDetails(User user, Long id, String email, String nickname, String password, String phone,
+            String snsType,
             String snsId, String name, LocalDate birth,
             Collection<? extends GrantedAuthority> authorities) {
+        this.user = user;
         this.pid = id;
         this.email = email;
         this.nickname = nickname;
@@ -56,6 +60,7 @@ public class CustomUserDetails implements UserDetails {
         List<SimpleGrantedAuthority> authorities = List.of(authority);
 
         return new CustomUserDetails(
+                user,
                 user.getPid(),
                 user.getEmail(),
                 user.getNickname(),
@@ -123,5 +128,9 @@ public class CustomUserDetails implements UserDetails {
 
     public String getNickname() {
         return nickname;
+    }
+
+    public User getUser() {
+        return user;
     }
 }

@@ -54,8 +54,6 @@ public class SquadChatImage {
         this.createDate = LocalDate.now();
     }
 
-    private final static String supportedExtension[] = { "jpg", "jpeg", "gif", "bmp", "png" };
-
     public SquadChatImage(String originName) {
         this.originName = originName;
         this.uniqueName = generateUniqueName(extractExtension(originName));
@@ -72,21 +70,21 @@ public class SquadChatImage {
         }
     }
 
-    private String generateUniqueName(String extension) {
-        return UUID.randomUUID().toString() + "." + extension;
-    }
-
-    private String extractExtension(String originName) {
-        try {
-            String ext = originName.substring(originName.lastIndexOf(".") + 1);
-            if (isSupportedFormat(ext))
-                return ext;
-        } catch (StringIndexOutOfBoundsException e) {
-        }
+    private String extractExtension(String name) {
+        if (!name.contains("."))
+            throw new UnSupportedImageFormatException();
+        String ext = name.substring(name.lastIndexOf('.') + 1);
+        if (isSupportedFormat(ext))
+            return ext;
         throw new UnSupportedImageFormatException();
     }
 
     private boolean isSupportedFormat(String ext) {
-        return Arrays.stream(supportedExtension).anyMatch(e -> e.equalsIgnoreCase(ext));
+        String[] supported = { "jpg", "jpeg", "gif", "bmp", "png" };
+        return Arrays.stream(supported).anyMatch(e -> e.equalsIgnoreCase(ext));
+    }
+
+    private String generateUniqueName(String extension) {
+        return UUID.randomUUID().toString() + "." + extension;
     }
 }

@@ -108,13 +108,6 @@ public class AuthService {
         return user.get().getSnsType();
     }
 
-    public String checkToken(String token) {
-        token = token.replace("Bearer ", "");
-        String email = jwtUtils.extractEmail(token);
-        userRepository.findByEmail(email).orElseThrow(() -> new IllegalStateException("존재하지 않는 이메일입니다."));
-        return token;
-    }
-
     public boolean validateUser(String email, String code) {
         RandomCode randomCode = randomCodeRepository.findTopByEmailOrderByCreatedDesc(email);
         System.out.println(randomCode == null);

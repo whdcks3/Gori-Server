@@ -3,6 +3,8 @@ package com.whdcks3.portfolio.gory_server.service.abtracts;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.whdcks3.portfolio.gory_server.data.models.squad.Squad;
 import com.whdcks3.portfolio.gory_server.data.models.squad.SquadParticipant.SquadParticipationStatus;
 import com.whdcks3.portfolio.gory_server.data.models.user.User;
@@ -13,6 +15,7 @@ import com.whdcks3.portfolio.gory_server.repositories.BlockRespository;
 import com.whdcks3.portfolio.gory_server.repositories.SquadParticipantRepository;
 import com.whdcks3.portfolio.gory_server.repositories.SquadRepository;
 import com.whdcks3.portfolio.gory_server.repositories.UserRepository;
+import com.whdcks3.portfolio.gory_server.security.jwt.JwtUtils;
 import com.whdcks3.portfolio.gory_server.service.FirebaseMessagingService;
 import com.whdcks3.portfolio.gory_server.service.interfaces.ISquadService;
 
@@ -29,6 +32,8 @@ public abstract class ASquadService implements ISquadService {
     protected final BlockRespository blockRespository;
 
     protected final FirebaseMessagingService firebaseMessagingService;
+
+    protected final JwtUtils jwtUtils;
 
     public User findUser(Long userId) {
         return userRepository.findById(userId)

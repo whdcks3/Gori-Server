@@ -182,4 +182,11 @@ public class Squad extends BaseEntity {
         }
         return LocalDateTime.of(date, time);
     }
+
+    public void joinParticipant(SquadParticipant participant) {
+        this.participants.add(participant);
+        if (this.joinType == JoinType.DIRECT) {
+            this.increaseCurrentCount();
+        }
+    }
 }

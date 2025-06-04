@@ -75,6 +75,9 @@ public class AuthRestController {
     public ResponseEntity<Map<String, String>> authenticateUser(@RequestParam String email,
             @RequestParam String snsType, @RequestParam String snsId) {
         System.out.println(email + ", " + snsType + ", " + snsId);
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(email, snsType + snsId));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
         return ResponseEntity.ok(authService.authenticate(email, snsType, snsId));
     }
 
@@ -82,11 +85,6 @@ public class AuthRestController {
     public ResponseEntity<?> rePassword(@RequestParam String email, @RequestParam String rawPassword) {
         authService.resetPassword(email, rawPassword);
         return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/checkToken")
-    public ResponseEntity<?> checkToken(@RequestHeader("Authorization") String token) {
-        return ResponseEntity.ok(authService.checkToken(token));
     }
 
     @PostMapping("/refresh")
@@ -122,6 +120,16 @@ public class AuthRestController {
     @PostMapping("/multiauth")
     public ResponseEntity<?> multiAuthentication(@RequestParam String email) {
         authService.shouldLock(email);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/check")
+    public ResponseEntity<?> checkToken(@RequestHeader("Authorization") String bearerToken) {
+        if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
+            return ResponseEntity.status(401).body("인증 토큰이 없습니다.");
+        }
+        String token = bearerToken.substring(7);
+        jwtUtills.validateJwtToken(token);
         return ResponseEntity.ok().build();
     }
 }

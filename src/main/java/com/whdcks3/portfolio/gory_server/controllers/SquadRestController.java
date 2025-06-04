@@ -1,5 +1,7 @@
 package com.whdcks3.portfolio.gory_server.controllers;
 
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -42,7 +44,7 @@ public class SquadRestController {
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> modifySquad(@AuthenticationPrincipal User user, @PathVariable Long sid,
             @RequestBody SquadRequest req) {
-        squadService.modifySquad(user.getPid(), sid, req);
+        squadService.modifySquad(user, sid, req);
         return ResponseEntity.ok().build();
     }
 
@@ -74,11 +76,12 @@ public class SquadRestController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/{sid}/join")
-    public ResponseEntity<?> approveSquad(@AuthenticationPrincipal User userId, @RequestParam Long sid) {
-        squadService.joinSquad(userId, sid);
-        return ResponseEntity.ok().build();
-    }
+    // @PostMapping("/{sid}/join")
+    // public ResponseEntity<?> approveSquad(@AuthenticationPrincipal User user,
+    // @RequestParam Long sid) {
+    // squadService.joinSquad(user, sid);
+    // return ResponseEntity.ok().build();
+    // }
 
     @PostMapping("/{sid}/approve/{uid}")
     public ResponseEntity<?> approveParticipant(@AuthenticationPrincipal User user, @PathVariable Long sid,
@@ -105,6 +108,17 @@ public class SquadRestController {
     public ResponseEntity<?> leaveSquad(@AuthenticationPrincipal User user, @PathVariable Long sid) {
         squadService.kickOffParticipant(user, sid);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{sid}/join-or-token")
+    public ResponseEntity<?> joinOrGetToken(@AuthenticationPrincipal User user, @PathVariable Long sid) {
+        Map<String, Object> result = squadService.joinOrGetChatToken(user, sid);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{sid}/participants")
+    public ResponseEntity<?> getParticipants(@AuthenticationPrincipal User user, @PathVariable Long sid) {
+        return ResponseEntity.ok(squadService.getParticipants(user, sid));
     }
 
 }

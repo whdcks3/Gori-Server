@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.whdcks3.portfolio.gory_server.data.models.feed.FeedComment;
 import com.whdcks3.portfolio.gory_server.data.models.user.User;
 import com.whdcks3.portfolio.gory_server.data.requests.FeedCommentRequest;
 import com.whdcks3.portfolio.gory_server.data.requests.FeedRequest;
@@ -27,7 +26,6 @@ import com.whdcks3.portfolio.gory_server.service.BlockService;
 import com.whdcks3.portfolio.gory_server.service.FeedService;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import org.springframework.web.bind.annotation.RequestMethod;

@@ -23,7 +23,7 @@ public class WebSocketController {
     public SquadChatRequestDto sendMessage(@AuthenticationPrincipal User user,
             SquadChatRequestDto chatMessage) {
         chatMessage.setTime(LocalDateTime.now());
-        squadChatService.saveMessage(user, chatMessage);
+        // squadChatService.saveMessage(user, chatMessage);
         return chatMessage;
     }
 }
