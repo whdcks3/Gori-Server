@@ -40,7 +40,7 @@ public class SquadRestController {
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/modify/{id}")
+    @PutMapping("/modify/{sid}")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> modifySquad(@AuthenticationPrincipal User user, @PathVariable Long sid,
             @RequestBody SquadRequest req) {
@@ -113,7 +113,7 @@ public class SquadRestController {
     @PostMapping("/{sid}/join-or-token")
     public ResponseEntity<?> joinOrGetToken(@AuthenticationPrincipal User user, @PathVariable Long sid) {
         Map<String, Object> result = squadService.joinOrGetChatToken(user, sid);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{sid}/participants")

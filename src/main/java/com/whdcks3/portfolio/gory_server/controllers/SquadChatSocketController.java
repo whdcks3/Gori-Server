@@ -6,11 +6,11 @@ import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Controller;
 
-import com.google.api.Authentication;
 import com.whdcks3.portfolio.gory_server.data.dto.ChatMessageDto;
 import com.whdcks3.portfolio.gory_server.data.models.squad.SquadChat;
 import com.whdcks3.portfolio.gory_server.data.models.user.User;
@@ -61,12 +61,12 @@ public class SquadChatSocketController {
                 .build();
     }
 
-    // public Authentication getAuthentication(String token) {
-    // String email = jwtUtils.extractEmail(token);
-    // UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+    public Authentication getAuthentication(String token) {
+        String email = jwtUtils.extractEmail(token);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-    // // 이때 userDetails가 User 객체로 반환되도록 커스텀 구현 필요
-    // return new UsernamePasswordAuthenticationToken(userDetails, "",
-    // userDetails.getAuthorities());
-    // }
+        // 이때 userDetails가 User 객체로 반환되도록 커스텀 구현 필요
+        return new UsernamePasswordAuthenticationToken(userDetails, "",
+                userDetails.getAuthorities());
+    }
 }

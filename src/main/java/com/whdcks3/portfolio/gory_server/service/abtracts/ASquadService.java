@@ -52,7 +52,7 @@ public abstract class ASquadService implements ISquadService {
     }
 
     public boolean isAgeValidate(int minAge, int maxAge, int age) {
-        return minAge > age || maxAge < age;
+        return minAge >= age || maxAge <= age;
     }
 
     public void validateAgeRange(Squad squad, SquadRequest req) {
