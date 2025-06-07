@@ -76,12 +76,11 @@ public class SquadRestController {
         return ResponseEntity.ok(response);
     }
 
-    // @PostMapping("/{sid}/join")
-    // public ResponseEntity<?> approveSquad(@AuthenticationPrincipal User user,
-    // @RequestParam Long sid) {
-    // squadService.joinSquad(user, sid);
-    // return ResponseEntity.ok().build();
-    // }
+    @PutMapping("/{sid}/close")
+    public ResponseEntity<?> closeSquad(@AuthenticationPrincipal User user, @PathVariable Long sid) {
+        squadService.closeSquad(user, sid);
+        return ResponseEntity.ok().build();
+    }
 
     @PostMapping("/{sid}/approve/{uid}")
     public ResponseEntity<?> approveParticipant(@AuthenticationPrincipal User user, @PathVariable Long sid,

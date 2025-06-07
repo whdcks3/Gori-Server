@@ -23,6 +23,9 @@ import com.whdcks3.portfolio.gory_server.service.UserService;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @SpringBootTest
 @AutoConfigureMockMvc
 public class AuthControllerTest {
@@ -47,6 +50,9 @@ public class AuthControllerTest {
 
     private String nickname;
 
+    private Map<String, User> users = new HashMap<>();
+    private Map<String, Map<String, String>> tokens = new HashMap<>();
+
     @BeforeEach
     void setup() {
         // userRepository.deleteAll();
@@ -58,6 +64,9 @@ public class AuthControllerTest {
         // new SignupRequest("sj012944@gmail.com", "kakao", "00000", "홍길동",
         // "01012341234", "M", "19970101", "true",
         // "", ""));
+
+        // users.put("test1@test.com", testUser1);
+        // users.put("test1@test.com", token);
     }
 
     @Test
