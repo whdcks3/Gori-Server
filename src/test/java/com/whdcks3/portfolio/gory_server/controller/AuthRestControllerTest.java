@@ -10,13 +10,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 
 import com.whdcks3.portfolio.gory_server.data.models.RandomCode;
 import com.whdcks3.portfolio.gory_server.data.models.user.User;
 import com.whdcks3.portfolio.gory_server.repositories.RandomCodeRepository;
 import com.whdcks3.portfolio.gory_server.repositories.UserRepository;
-import com.whdcks3.portfolio.gory_server.security.jwt.JwtUtils;
 import com.whdcks3.portfolio.gory_server.service.AuthService;
 import com.whdcks3.portfolio.gory_server.service.UserService;
 
@@ -28,7 +26,7 @@ import java.util.Map;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class AuthControllerTest {
+public class AuthRestControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
@@ -46,7 +44,7 @@ public class AuthControllerTest {
 
     private String token, activateToken;
 
-    private static final Logger logger = LoggerFactory.getLogger(AuthControllerTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(AuthRestControllerTest.class);
 
     private String nickname;
 
