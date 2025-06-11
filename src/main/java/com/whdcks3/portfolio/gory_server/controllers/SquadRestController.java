@@ -36,8 +36,7 @@ public class SquadRestController {
     @PostMapping("/create")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> createSquad(@AuthenticationPrincipal User user, @RequestBody SquadRequest req) {
-        squadService.createSquad(user, req);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(squadService.createSquad(user, req));
     }
 
     @PutMapping("/modify/{sid}")

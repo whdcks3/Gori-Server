@@ -85,7 +85,6 @@ public class AuthService {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(email, snsType + snsId));
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        sendActivationEmail(user);
         return getTokensByUser(user);
     }
 

@@ -46,12 +46,13 @@ public class SquadService extends ASquadService {
     JwtUtils jwtUtils;
 
     @Override
-    public void createSquad(User user, SquadRequest req) {
+    public SquadSimpleDto createSquad(User user, SquadRequest req) {
         Squad squad = Squad.create(user, req);
         squad = squadRepository.save(squad);
 
         SquadParticipant participant = SquadParticipant.create(user, squad);
         squadParticipantRepository.save(participant);
+        return SquadSimpleDto.toDto(squad);
     }
 
     @Override
