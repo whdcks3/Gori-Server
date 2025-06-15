@@ -5,7 +5,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -15,25 +14,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.security.test.context.support.WithUserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
-import com.whdcks3.portfolio.gory_server.data.models.squad.SquadParticipant;
-import com.whdcks3.portfolio.gory_server.data.models.squad.SquadParticipant.SquadParticipationStatus;
+import com.whdcks3.portfolio.gory_server.data.models.user.EmailVerification;
 import com.whdcks3.portfolio.gory_server.data.models.user.User;
-import com.whdcks3.portfolio.gory_server.data.requests.SignupRequest;
 import com.whdcks3.portfolio.gory_server.data.requests.SquadRequest;
 import com.whdcks3.portfolio.gory_server.enums.Gender;
 import com.whdcks3.portfolio.gory_server.enums.JoinType;
 import com.whdcks3.portfolio.gory_server.enums.LockType;
+import com.whdcks3.portfolio.gory_server.repositories.EmailVerificationRepository;
 import com.whdcks3.portfolio.gory_server.repositories.SquadParticipantRepository;
 import com.whdcks3.portfolio.gory_server.repositories.SquadRepository;
 import com.whdcks3.portfolio.gory_server.repositories.UserRepository;
-import com.whdcks3.utils.TestUserUtil;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -56,37 +52,113 @@ public class SquadControllerTest {
     @Autowired
     private SquadParticipantRepository squadParticipantRepository;
 
+    @Autowired
+    private EmailVerificationRepository emailVerificationRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     private Map<String, String> tokenMap;
 
     @BeforeEach
-    void setupUsers() throws Exception {
-        tokenMap = new HashMap<>();
+    void setUpUsers() throws Exception {
+        tokenMap.clear();
 
-        for (int i = 1; i < 20; i++) {
-            SignupRequest req = TestUserUtil.createSignupRequest(i);
-            System.out.println("회원가입 JSON: " + objectMapper.writeValueAsString(req));
+        for (int i = 1; i <= 20; i++) {
+            String email = "user" + i + "@test.com";
+            String snsType = "kakao";
+            String snsId = "kakao-" + i;
+            String rawPassword = snsType + snsId;
+
+            String gender = (i % 2 == 0) ? "M" : "F";
+
+            int birthYear = 1950 + (i % 21);
+            String birth = birthYear + "-01-01";
+
+            String jsonBody = String.format("""
+                    {
+                        "email": "%s",
+                        "snsType": "%s",
+                        "snsId": "%s",
+                        "name": "테스트유저%d",
+                        "carrier": "SKT",
+                        "phone": "010-1234-%04d",
+                        "gender": "%s",
+                        "birth": "%s",
+                        "receiveEvent": "Y"
+                    }
+                    """, email, snsType, snsId, i, i, gender, birth);
 
             mockMvc.perform(post("/api/auth/signup")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(req)))
+                    .content(jsonBody))
                     .andExpect(status().isOk());
 
-            User user = userRepository.findByEmail(req.getEmail()).orElseThrow();
+            User user = userRepository.findByEmail(email).orElseThrow();
+            EmailVerification verification = emailVerificationRepository.findByUser(user)
+                    .orElseThrow(() -> new RuntimeException("이메일 인증 정보 없음: " + email));
+            verification.setVerified(true);
+            emailVerificationRepository.save(verification);
+
             user.setLockType(LockType.NONE);
             user.setLockedUntil(null);
+            user.setPassword(passwordEncoder.encode(rawPassword));
+            user.setNickname("닉네임" + i);
             userRepository.save(user);
 
             MvcResult result = mockMvc.perform(post("/api/auth/signin")
-                    .param("email", req.getEmail())
-                    .param("snsType", req.getSnsType())
-                    .param("snsId", req.getSnsId()))
+                    .param("email", email)
+                    .param("snsType", snsType)
+                    .param("snsId", snsId))
                     .andExpect(status().isOk())
                     .andReturn();
 
-            String responseJson = result.getResponse().getContentAsString();
-            String accessToken = JsonPath.read(responseJson, "$.accessToken");
-            tokenMap.put("email", "Bearer " + accessToken);
+            String response = result.getResponse().getContentAsString();
+            String accessToken = JsonPath.read(response, "$.accessToken");
+
+            tokenMap.put(email, "Bearer " + accessToken);
         }
+    }
+
+    @Test
+    @DisplayName("user1이 모임 생성 후 user2가 참여")
+    void testUser1CreatesSquadAndUser2Joins() throws Exception {
+        String tokenUser1 = tokenMap.get("user1@test.com");
+
+        String squadJson = String.format("""
+                {
+                    "title": "헬스 모임",
+                    "category": "취미",
+                    "description": "주 3회 운동하실 분 구해요.",
+                    "regionMain": "서울",
+                    "regionSub": "강남구",
+                    "date": "%s",
+                    "time": "10:30:00",
+                    "genderRequirement": "ALL",
+                    "minAge": 50,
+                    "maxAge": 80,
+                    "timeSpecified": "true",
+                    "joinType": "DIRECT",
+                    "maxParticipants": 5
+                }
+                """, LocalDate.now().plusDays(3));
+
+        MvcResult result = mockMvc.perform(post("/api/squad/create")
+                .header("Authorization", tokenUser1)
+                .contentType("application/json")
+                .content(squadJson))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String response = result.getResponse().getContentAsString();
+        int pid = JsonPath.read(response, "$.pid");
+        Long squadId = (long) pid;
+
+        String tokenUser2 = tokenMap.get("user2@test.com");
+
+        mockMvc.perform(post("/api/squad/" + squadId + "/join-or-token")
+                .header("Authorization", tokenUser2))
+                .andExpect(status().isOk());
     }
 
     @Test

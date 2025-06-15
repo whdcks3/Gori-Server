@@ -57,6 +57,10 @@ public class User extends BaseEntity {
     @Size(max = 120)
     private String snsId;
 
+    // @Enumerated(EnumType.STRING)
+    // @Column(nullable = false)
+    // private OAuthProvider oauthProvider;
+
     private String carrier;
 
     @Size(max = 20)
@@ -64,7 +68,7 @@ public class User extends BaseEntity {
 
     private String name;
 
-    @Column(nullable = false, columnDefinition = "VARCHAR(8) DEFAULT ''")
+    @Column(nullable = false, columnDefinition = "VARCHAR(20) DEFAULT ''")
     private String nickname;
 
     private LocalDate birth;
@@ -81,6 +85,11 @@ public class User extends BaseEntity {
     @Column(nullable = false, columnDefinition = "VARCHAR(256) DEFAULT ''")
     private String imageUrl, introduction;
 
+    // @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.DETACH)
+    // @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_pid"),
+    // inverseJoinColumns = @JoinColumn(name = "role_id"))
+    // private Set<Role> roles;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
@@ -94,15 +103,15 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private LockType lockType;
 
+    // 계정 인증메일 기록
     @ElementCollection
     @CollectionTable(name = "email_auth_attempts", joinColumns = @JoinColumn(name = "email"))
     private List<LocalDateTime> authAttempts = new ArrayList<>();
 
+    // 잠금 해제 시간
+
     @Column
     private LocalDateTime lockedUntil;
-
-    // @Column
-    // private boolean isAdmin;
 
     public User(SignupRequest req, String password, String imageUrl) {
         this.email = req.getEmail();
@@ -113,13 +122,23 @@ public class User extends BaseEntity {
         this.phone = req.getPhone();
         this.carrier = req.getCarrier();
         this.name = req.getName();
-        this.birth = LocalDate.parse(req.getBirth().toString(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        // this.birth = LocalDate.parse(req.getBirth().toString(),
+        // DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        this.birth = req.getBirth();
         this.gender = req.getGender();
         this.receiveEvent = req.getReceiveEvent().equals("Y");
+        this.chatroomAlarm = true;
+        this.feedAlarm = true;
+        this.feedLikeAlarm = true;
+        this.squadChatAlarm = true;
+        this.squadNotifyAlarm = true;
         this.nickname = "";
         this.lockType = LockType.EMAIL_AUTH;
         this.role = Role.USER;
         this.authAttempts = new ArrayList<>();
+        this.introduction = "";
+        this.reportCount = 0;
+        this.fcmToken = null;
     }
 
     public void update(UserModifyRequest req, String url, String path) {
@@ -135,7 +154,13 @@ public class User extends BaseEntity {
         if (imageUrl.contains("avatar_placeholder")) {
             return;
         }
+        // TODO: delete profile image
+        // new File(imageUrl).delete();
     }
+
+    // public void setAlarm() {
+    // feedAlarm = !feedAlarm;
+    // }
 
     public void increaseReportCount() {
         this.reportCount++;
@@ -196,10 +221,4 @@ public class User extends BaseEntity {
     public boolean isFcmAbled() {
         return squadNotifyAlarm && fcmToken != null;
     }
-
-    // public void preventAgeChange() {
-    // if (this.isAdmin) {
-    // throw new IllegalStateException("관리자의 나이대는 수정할 수 없습니다.");
-    // }
-    // }
 }
