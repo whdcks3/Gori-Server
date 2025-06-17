@@ -27,7 +27,7 @@ public class FirebaseMessagingService implements ISquadFcm {
         boolean isAlarm = squad.getUser().getFeedAlarm();
         String title = "모임에 새로운 멤버가 참여했습니다.";
         String content = String.format("회원님의 모임글 [%s]에 새로운 멤버가 참여했습니다.",
-                squad.getTitle().substring(0, Math.max(20, squad.getTitle().length())));
+                squad.getTitle().substring(0, Math.min(20, squad.getTitle().length())));
         String data = squad.getPid() + ",squad";
 
         sendPushToClient(isAlarm, fcmToken, title, content, data);
@@ -51,7 +51,7 @@ public class FirebaseMessagingService implements ISquadFcm {
 
                 String title = squad.getTitle();
                 String content = String.format("두근두근 모임 하루 전. 멤버들도 잊지않았겠죠?.",
-                        squad.getTitle().substring(0, Math.max(20, squad.getTitle().length())));
+                        squad.getTitle().substring(0, Math.min(20, squad.getTitle().length())));
                 String data = squad.getPid() + ",squad";
 
                 sendPushToClients(tokens, title, content, data);

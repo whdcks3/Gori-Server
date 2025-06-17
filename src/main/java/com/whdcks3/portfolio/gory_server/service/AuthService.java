@@ -206,7 +206,7 @@ public class AuthService {
         EmailVerification verification = new EmailVerification(user, token, LocalDateTime.now().plusHours(24),
                 false);
         emailVerificationRepository.save(verification);
-        emailUtils.sendVerificationEmail(user.getEmail(), token);
+        // emailUtils.sendVerificationEmail(user.getEmail(), token);
         if (token == verification.getToken()) {
             verification.getUser().setLockType(LockType.NONE);
         }

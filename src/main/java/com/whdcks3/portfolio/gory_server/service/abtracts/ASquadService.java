@@ -74,8 +74,8 @@ public abstract class ASquadService implements ISquadService {
     }
 
     public boolean isGenderValidate(User user, Gender genderRequirement) {
-        return genderRequirement == Gender.MALE && user.getGender().equals("여성")
-                || genderRequirement == Gender.FEMALE && user.getGender().equals("남성");
+        return genderRequirement == Gender.MALE && user.getGender().equals("F")
+                || genderRequirement == Gender.FEMALE && user.getGender().equals("M");
     }
 
     public void validateGender(Squad squad, SquadRequest req) {

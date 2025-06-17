@@ -105,7 +105,7 @@ public class SquadService extends ASquadService {
             }
 
             if (participant.getStatus() == SquadParticipationStatus.REJECTED) {
-                throw new IllegalStateException("참여가 거절된 모임입니다.");
+                throw new IllegalArgumentException("참여가 거절된 모임입니다.");
             }
 
             if (participant.getStatus() == SquadParticipationStatus.KICKED_OUT) {
@@ -216,7 +216,7 @@ public class SquadService extends ASquadService {
         Squad squad = findSquad(sqaudId);
         User participantUser = findUser(userId);
 
-        if (squad.getUser() != user) {
+        if (squad.getUser().getPid() != user.getPid()) {
             throw new IllegalArgumentException("방장이 아닙니다. 승인 권한이 없습니다.");
         }
 
@@ -229,11 +229,11 @@ public class SquadService extends ASquadService {
     }
 
     @Transactional
-    public void kickOffParticipant(User user, Long sqaudId) {
+    public void leaveSquad(User user, Long sqaudId) {
         Squad squad = findSquad(sqaudId);
 
-        if (squad.getUser() != user) {
-            throw new IllegalArgumentException("방장이 아닙니다. 승인 권한이 없습니다.");
+        if (squad.getUser().getPid() == user.getPid()) {
+            throw new IllegalArgumentException("방장은 모임을 떠날 수 없습니다. 삭제를 진행해주세요.");
         }
 
         SquadParticipant participant = squad.getParticipants().stream().filter(p -> p.getUser() == user)

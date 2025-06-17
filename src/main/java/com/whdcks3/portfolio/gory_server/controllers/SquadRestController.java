@@ -104,7 +104,7 @@ public class SquadRestController {
 
     @PostMapping("/{sid}/leave")
     public ResponseEntity<?> leaveSquad(@AuthenticationPrincipal User user, @PathVariable Long sid) {
-        squadService.kickOffParticipant(user, sid);
+        squadService.leaveSquad(user, sid);
         return ResponseEntity.ok().build();
     }
 

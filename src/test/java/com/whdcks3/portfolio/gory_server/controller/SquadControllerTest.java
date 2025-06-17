@@ -1,10 +1,12 @@
 package com.whdcks3.portfolio.gory_server.controller;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -17,9 +19,13 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
+import com.whdcks3.portfolio.gory_server.data.models.squad.Squad;
+import com.whdcks3.portfolio.gory_server.data.models.squad.SquadParticipant;
+import com.whdcks3.portfolio.gory_server.data.models.squad.SquadParticipant.SquadParticipationStatus;
 import com.whdcks3.portfolio.gory_server.data.models.user.EmailVerification;
 import com.whdcks3.portfolio.gory_server.data.models.user.User;
 import com.whdcks3.portfolio.gory_server.data.requests.SquadRequest;
@@ -32,9 +38,12 @@ import com.whdcks3.portfolio.gory_server.repositories.SquadRepository;
 import com.whdcks3.portfolio.gory_server.repositories.UserRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@Transactional
 public class SquadControllerTest {
 
     @Autowired
@@ -58,7 +67,7 @@ public class SquadControllerTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    private Map<String, String> tokenMap;
+    private Map<String, String> tokenMap = new HashMap<>();
 
     @BeforeEach
     void setUpUsers() throws Exception {
@@ -120,6 +129,19 @@ public class SquadControllerTest {
         }
     }
 
+    @BeforeEach
+    void setCategory() throws Exception {
+
+    }
+
+    @Test
+    @DisplayName("20명의 유저가 로그인 성공 후 토큰 발급 받음")
+    void testTokenMapBuilt() {
+        assertThat(tokenMap).hasSize(20);
+        assertThat(tokenMap.get("user1@test.com")).startsWith("Bearer ");
+        assertThat(tokenMap.get("user1@test.com")).isNotBlank();
+    }
+
     @Test
     @DisplayName("user1이 모임 생성 후 user2가 참여")
     void testUser1CreatesSquadAndUser2Joins() throws Exception {
@@ -162,215 +184,382 @@ public class SquadControllerTest {
     }
 
     @Test
-    @DisplayName("20명의 유저가 로그인 성공 후 토큰 발급 받음")
-    void testTokenMapBuilt() {
-        assertThat(tokenMap).hasSize(20);
-        assertThat(tokenMap.get("user1@test.com")).startsWith("Bearer ");
-        assertThat(tokenMap.get("user1@test.com")).isNotBlank();
-    }
+    @DisplayName("user2가 이미 참여한 모임(승인제 아님)에 다시 join-or-token 요청 -> chatToken 반환")
+    void testUser2RejoinsAndGetsToken() throws Exception {
+        String tokenUser1 = tokenMap.get("user1@test.com");
 
-    @Test
-    @DisplayName("user1이 모임을 생성하고 user2가 참여한다")
-    void testUser1CreatesAndUser2JoinSquad() throws Exception {
-        String user1Email = "user1@test.com";
-        String token1 = tokenMap.get(user1Email);
+        String squadJson = String.format("""
+                {
+                    "title": "헬스 모임",
+                    "category": "취미",
+                    "description": "주 3회 운동하실 분 구해요.",
+                    "regionMain": "서울",
+                    "regionSub": "강남구",
+                    "date": "%s",
+                    "time": "10:30:00",
+                    "genderRequirement": "ALL",
+                    "minAge": 50,
+                    "maxAge": 80,
+                    "timeSpecified": "true",
+                    "joinType": "DIRECT",
+                    "maxParticipants": 5
+                }
+                """, LocalDate.now().plusDays(3));
 
-        String user2Email = "user2@test.com";
-        String token2 = tokenMap.get(user2Email);
-
-        SquadRequest req = new SquadRequest();
-        req.setTitle("헬스 모임");
-        req.setCategory("취미");
-        req.setDescription("주 3회 운동하실 분 구함");
-        req.setDate(LocalDate.now().plusDays(3));
-        req.setTime(LocalTime.of(10, 30, 0));
-        req.setGenderRequirement(Gender.ALL);
-        req.setMaxAge(80);
-        req.setMinAge(50);
-        req.setMaxParticipants(5);
-        req.setJoinType(JoinType.DIRECT);
-        req.setRegionMain("서울시");
-        req.setRegionSub("강남구");
-        req.setTimeSpecified(true);
-
-        MvcResult result = mockMvc.perform(post("/api/squad")
-                .header("Authorizatiion", token1)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(req)))
+        MvcResult result = mockMvc.perform(post("/api/squad/create")
+                .header("Authorization", tokenUser1)
+                .contentType("application/json")
+                .content(squadJson))
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String responseJson = result.getResponse().getContentAsString();
-        Long squadId = JsonPath.read(responseJson, "$.pid");
+        String response = result.getResponse().getContentAsString();
+        int pid = JsonPath.read(response, "$.pid");
+        Long squadId = (long) pid;
 
-        mockMvc.perform(post("/api/squad/" + squadId + "/join")
-                .header("Authorization", token2))
+        String tokenUser2 = tokenMap.get("user2@test.com");
+
+        mockMvc.perform(post("/api/squad/" + squadId + "/join-or-token")
+                .header("Authorization", tokenUser2))
                 .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/squad/" + squadId + "/join-or-token")
+                .header("Authorization", tokenUser2))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("joined"))
+                .andExpect(jsonPath("$.chatToken").isString());
     }
 
-    // @BeforeEach
-    // void setup() {
-    // if (!userRepository.existsByEmail("sj012944@gmail.com")) {
-    // User user = new User();
-    // user.setEmail("sj012944@gmail.com");
-    // user.setSnsType("구글");
-    // user.setSnsId("tjwhdcks1234");
-    // user.setNickname("오류안뜨길");
-    // userRepository.save(user);
-    // }
+    @Test
+    @DisplayName("user3가 강퇴된 모임에 join-or-token 요청 시 403 반환")
+    void testKickedUserCannotJoinOrGetToken() throws Exception {
+        String tokenUser1 = tokenMap.get("user1@test.com");
 
-    // if (!userRepository.existsByEmail("sjmj01@naver.com")) {
-    // User secondUser = new User();
-    // secondUser.setEmail("sjmj01@naver.com");
-    // secondUser.setSnsType("네이버");
-    // secondUser.setSnsId("whdcks123");
-    // secondUser.setNickname("두번째유저");
-    // userRepository.save(secondUser);
-    // }
+        String squadJson = String.format("""
+                {
+                    "title": "헬스 모임",
+                    "category": "취미",
+                    "description": "주 3회 운동하실 분 구해요.",
+                    "regionMain": "서울",
+                    "regionSub": "강남구",
+                    "date": "%s",
+                    "time": "10:30:00",
+                    "genderRequirement": "ALL",
+                    "minAge": 50,
+                    "maxAge": 80,
+                    "timeSpecified": "true",
+                    "joinType": "DIRECT",
+                    "maxParticipants": 5
+                }
+                """, LocalDate.now().plusDays(3));
 
-    // if (!userRepository.existsByEmail("adwc123@gmail.com")) {
-    // User thirdUser = new User();
-    // thirdUser.setEmail("adwc123@gmail.com");
-    // thirdUser.setSnsType("구글");
-    // thirdUser.setSnsId("cadks1");
-    // thirdUser.setNickname("세번째유저");
-    // }
+        MvcResult result = mockMvc.perform(post("/api/squad/create")
+                .header("Authorization", tokenUser1)
+                .contentType("application/json")
+                .content(squadJson))
+                .andExpect(status().isOk())
+                .andReturn();
 
-    // SquadParticipant participant = new SquadParticipant();
-    // participant.setUser(null);
-    // participant.setSquad(null);
-    // participant.setStatus(SquadParticipationStatus.PENDING);
-    // squadParticipantRepository.save(participant);
-    // }
+        String response = result.getResponse().getContentAsString();
+        int pid = JsonPath.read(response, "$.pid");
+        Long squadId = (long) pid;
 
-    // @WithMockUser(username = "sj012944@gmail.com", roles = "USER")
-    // @Test
-    // void testCreateSquad() throws Exception {
-    // String requestBody = """
-    // {
-    // "title": "오류만안나면돼",
-    // "category": "취미",
-    // "regionMain": "서울",
-    // "regionSub": "강남구",
-    // "description": "테스트입니다.",
-    // "minAge": 50,
-    // "maxAge": 70,
-    // "date": "2025-06-25",
-    // "time": "18:00:00",
-    // "timeSpecified": true,
-    // "joinType": "DIRECT",
-    // "genderRequirement": "ALL",
-    // "maxParticipants": 10
-    // }
-    // """;
+        String tokenUser2 = tokenMap.get("user3@test.com");
 
-    // mockMvc.perform(post("/api/squad/create")
-    // .contentType(MediaType.APPLICATION_JSON)
-    // .content(requestBody))
-    // .andExpect(status().isOk());
-    // }
+        mockMvc.perform(post("/api/squad/" + squadId + "/join-or-token")
+                .header("Authorization", tokenUser2))
+                .andExpect(status().isOk());
 
-    // @WithMockUser(roles = "USER")
-    // @Test
-    // void testModifySquad() throws Exception {
-    // mockMvc.perform(put("/api/squad/modify/1")
-    // .contentType(MediaType.APPLICATION_JSON)
-    // .content("""
-    // {
-    // "title": "오류만안나면돼",
-    // "category": "운동",
-    // "regionMain": "서울",
-    // "regionSub": "강남구",
-    // "description": "수정 내용입니다.",
-    // "minAge": 50,
-    // "maxAge": 70,
-    // "date": "2025-07-01",
-    // "time": "19:00:00",
-    // "timeSpecified": true,
-    // "joinType": "APPROVAL",
-    // "genderRequirement": "ALL",
-    // "maxParticipants": 8
-    // }
-    // """))
-    // .andExpect(status().isOk());
-    // }
+        User user3 = userRepository.findByEmail("user3@test.com").orElseThrow();
+        Squad squad = squadRepository.findById(squadId).orElseThrow();
+        SquadParticipant participant = squadParticipantRepository.findByUserAndSquad(user3, squad).orElseThrow();
+        participant.setStatus(SquadParticipationStatus.KICKED_OUT);
+        squadParticipantRepository.save(participant);
 
-    // @WithMockUser(roles = "USER")
-    // @Test
-    // void testDeleteSquad() throws Exception {
-    // mockMvc.perform(delete("/api/squad/delete/1")
-    // .param("isForcedDelete", "false"))
-    // .andExpect(status().isOk());
-    // }
+        mockMvc.perform(post("/api/squad/" + squadId + "/join-or-token")
+                .header("Authorization", tokenUser2))
+                .andExpect(status().isForbidden());
+    }
 
-    // @WithMockUser(roles = "USER")
-    // @Test
-    // void testMySquads() throws Exception {
-    // mockMvc.perform(get("/api/squad/mine"))
-    // .andExpect(status().isOk());
-    // }
+    @Test
+    @DisplayName("user4가 모임 조건(성별) 불일치 시 join-or-token 실패")
+    void testUser4JoinFailsDueToGenderConditionMismatch() throws Exception {
+        String tokenUser1 = tokenMap.get("user1@test.com");
 
-    // @WithMockUser(roles = "USER")
-    // @Test
-    // void testHomeSquads() throws Exception {
-    // mockMvc.perform(get("/api/squad/home")
-    // .param("regionMain", "서울"))
-    // .andExpect(status().isOk());
-    // }
+        String squadJson = String.format("""
+                {
+                    "title": "여성 독서 모임",
+                    "category": "2여성만 참여 가능",
+                    "description": "주 3회 운동하실 분 구해요.",
+                    "regionMain": "서울",
+                    "regionSub": "강남구",
+                    "date": "%s",
+                    "time": "10:30:00",
+                    "genderRequirement": "FEMALE",
+                    "minAge": 50,
+                    "maxAge": 80,
+                    "timeSpecified": "true",
+                    "joinType": "DIRECT",
+                    "maxParticipants": 5
+                }
+                """, LocalDate.now().plusDays(3));
 
-    // @WithMockUser(roles = "USER")
-    // @Test
-    // void testDetailSquad() throws Exception {
-    // mockMvc.perform(get("/api/squad/1"))
-    // .andExpect(status().isOk());
-    // }
+        MvcResult result = mockMvc.perform(post("/api/squad/create")
+                .header("Authorization", tokenUser1)
+                .contentType("application/json")
+                .content(squadJson))
+                .andExpect(status().isOk())
+                .andReturn();
 
-    // @WithMockUser(roles = "USER")
-    // @Test
-    // void testCloseSquad() throws Exception {
-    // mockMvc.perform(put("/api/squad/1/close"))
-    // .andExpect(status().isOk());
-    // }
+        String response = result.getResponse().getContentAsString();
+        int pid = JsonPath.read(response, "$.pid");
+        Long squadId = (long) pid;
 
-    // @WithMockUser(roles = "USER")
-    // @Test
-    // void testApproveParticipant() throws Exception {
-    // mockMvc.perform(post("/api/squad/1/approve/2"))
-    // .andExpect(status().isOk());
-    // }
+        String tokenUser2 = tokenMap.get("user4@test.com");
 
-    // @WithMockUser(roles = "USER")
-    // @Test
-    // void testRejectParticipant() throws Exception {
-    // mockMvc.perform(post("/api/squad/1/reject/2"))
-    // .andExpect(status().isOk());
-    // }
+        mockMvc.perform(post("/api/squad/" + squadId + "/join-or-token")
+                .header("Authorization", tokenUser2))
+                .andExpect(status().isBadRequest());
+    }
 
-    // @WithMockUser(roles = "USER")
-    // @Test
-    // void testKickOffParticipant() throws Exception {
-    // mockMvc.perform(post("/api/squad/1/kick/2"))
-    // .andExpect(status().isOk());
-    // }
+    @Test
+    @DisplayName("user4가 모임 조건(나이) 불일치 시 join-or-token 실패")
+    void testUser4JoinFailsDueToAgeConditionMismatch() throws Exception {
+        String tokenUser1 = tokenMap.get("user1@test.com");
 
-    // @WithMockUser(roles = "USER")
-    // @Test
-    // void testLeaveSquad() throws Exception {
-    // mockMvc.perform(post("/api/squad/1/leave"))
-    // .andExpect(status().isOk());
-    // }
+        String squadJson = String.format("""
+                {
+                    "title": "여성 독서 모임",
+                    "category": "2여성만 참여 가능",
+                    "description": "주 3회 운동하실 분 구해요.",
+                    "regionMain": "서울",
+                    "regionSub": "강남구",
+                    "date": "%s",
+                    "time": "10:30:00",
+                    "genderRequirement": "ALL",
+                    "minAge": 50,
+                    "maxAge": 60,
+                    "timeSpecified": "true",
+                    "joinType": "DIRECT",
+                    "maxParticipants": 5
+                }
+                """, LocalDate.now().plusDays(3));
 
-    // @WithMockUser(roles = "USER")
-    // @Test
-    // void testJoinOrGetToken() throws Exception {
-    // mockMvc.perform(post("/api/squad/1/join-or-token"))
-    // .andExpect(status().isOk());
-    // }
+        MvcResult result = mockMvc.perform(post("/api/squad/create")
+                .header("Authorization", tokenUser1)
+                .contentType("application/json")
+                .content(squadJson))
+                .andExpect(status().isOk())
+                .andReturn();
 
-    // @WithMockUser(roles = "USER")
-    // @Test
-    // void testGetParticipants() throws Exception {
-    // mockMvc.perform(get("/api/squad/1/participants"))
-    // .andExpect(status().isOk());
-    // }
+        String response = result.getResponse().getContentAsString();
+        int pid = JsonPath.read(response, "$.pid");
+        Long squadId = (long) pid;
+
+        String tokenUser2 = tokenMap.get("user4@test.com");
+
+        mockMvc.perform(post("/api/squad/" + squadId + "/join-or-token")
+                .header("Authorization", tokenUser2))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("user5가 승인제 모임에 참여 요청 시 pending 상태 반환")
+    void testUser5JoinApprovalBaseSquad() throws Exception {
+        String tokenUser1 = tokenMap.get("user1@test.com");
+
+        String squadJson = String.format("""
+                {
+                    "title": "여성 독서 모임",
+                    "category": "2여성만 참여 가능",
+                    "description": "주 3회 운동하실 분 구해요.",
+                    "regionMain": "서울",
+                    "regionSub": "강남구",
+                    "date": "%s",
+                    "time": "10:30:00",
+                    "genderRequirement": "ALL",
+                    "minAge": 50,
+                    "maxAge": 100,
+                    "timeSpecified": "true",
+                    "joinType": "APPROVAL",
+                    "maxParticipants": 5
+                }
+                """, LocalDate.now().plusDays(3));
+
+        MvcResult result = mockMvc.perform(post("/api/squad/create")
+                .header("Authorization", tokenUser1)
+                .contentType("application/json")
+                .content(squadJson))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String response = result.getResponse().getContentAsString();
+        int pid = JsonPath.read(response, "$.pid");
+        Long squadId = (long) pid;
+
+        String tokenUser2 = tokenMap.get("user5@test.com");
+
+        mockMvc.perform(post("/api/squad/" + squadId + "/join-or-token")
+                .header("Authorization", tokenUser2))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/squad/" + squadId + "/join-or-token")
+                .header("Authorization", tokenUser2))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("pending"))
+                .andExpect(jsonPath("$.chatToken").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("user1이 user5 승인 후 -> user5  승인제 모임에 참여 요청 시 joined + chatToken 반환")
+    void testUser5JoinApprovalThenRejoin() throws Exception {
+        String tokenUser1 = tokenMap.get("user1@test.com");
+
+        String squadJson = String.format("""
+                {
+                    "title": "여성 독서 모임",
+                    "category": "2여성만 참여 가능",
+                    "description": "주 3회 운동하실 분 구해요.",
+                    "regionMain": "서울",
+                    "regionSub": "강남구",
+                    "date": "%s",
+                    "time": "10:30:00",
+                    "genderRequirement": "ALL",
+                    "minAge": 50,
+                    "maxAge": 100,
+                    "timeSpecified": "true",
+                    "joinType": "APPROVAL",
+                    "maxParticipants": 5
+                }
+                """, LocalDate.now().plusDays(3));
+
+        MvcResult result = mockMvc.perform(post("/api/squad/create")
+                .header("Authorization", tokenUser1)
+                .contentType("application/json")
+                .content(squadJson))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String response = result.getResponse().getContentAsString();
+        int pid = JsonPath.read(response, "$.pid");
+        Long squadId = (long) pid;
+
+        String tokenUser2 = tokenMap.get("user5@test.com");
+
+        mockMvc.perform(post("/api/squad/" + squadId + "/join-or-token")
+                .header("Authorization", tokenUser2))
+                .andExpect(status().isOk());
+
+        User user5 = userRepository.findByEmail("user5@test.com").orElseThrow();
+        Squad squad = squadRepository.findById(squadId).orElseThrow();
+        SquadParticipant participant = squadParticipantRepository.findByUserAndSquad(user5, squad).orElseThrow();
+
+        participant.setStatus(SquadParticipationStatus.JOINED);
+        squadParticipantRepository.save(participant);
+
+        mockMvc.perform(post("/api/squad/" + squadId + "/join-or-token")
+                .header("Authorization", tokenUser2))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("joined"))
+                .andExpect(jsonPath("$.chatToken").isString());
+    }
+
+    @Test
+    @DisplayName("user6이 거절된 사앹에서 join-or-token요청 시 실패")
+    void testUser6RejectedCannotRejoin() throws Exception {
+        String tokenUser1 = tokenMap.get("user1@test.com");
+
+        String squadJson = String.format("""
+                {
+                    "title": "여성 독서 모임",
+                    "category": "2여성만 참여 가능",
+                    "description": "주 3회 운동하실 분 구해요.",
+                    "regionMain": "서울",
+                    "regionSub": "강남구",
+                    "date": "%s",
+                    "time": "10:30:00",
+                    "genderRequirement": "ALL",
+                    "minAge": 50,
+                    "maxAge": 100,
+                    "timeSpecified": "true",
+                    "joinType": "APPROVAL",
+                    "maxParticipants": 5
+                }
+                """, LocalDate.now().plusDays(3));
+
+        MvcResult result = mockMvc.perform(post("/api/squad/create")
+                .header("Authorization", tokenUser1)
+                .contentType("application/json")
+                .content(squadJson))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String response = result.getResponse().getContentAsString();
+        int pid = JsonPath.read(response, "$.pid");
+        Long squadId = (long) pid;
+
+        String tokenUser2 = tokenMap.get("user6@test.com");
+
+        mockMvc.perform(post("/api/squad/" + squadId + "/join-or-token")
+                .header("Authorization", tokenUser2))
+                .andExpect(status().isOk());
+
+        User user5 = userRepository.findByEmail("user6@test.com").orElseThrow();
+        Squad squad = squadRepository.findById(squadId).orElseThrow();
+        SquadParticipant participant = squadParticipantRepository.findByUserAndSquad(user5, squad).orElseThrow();
+
+        participant.setStatus(SquadParticipationStatus.REJECTED);
+        squadParticipantRepository.save(participant);
+
+        mockMvc.perform(post("/api/squad/" + squadId + "/join-or-token")
+                .header("Authorization", tokenUser2))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("user7이 탈퇴 후 재참여 시 정상저긍로 참여 및 토큰 발급")
+    void testUser7LeaveAndRejoin() throws Exception {
+        String tokenUser1 = tokenMap.get("user1@test.com");
+
+        String squadJson = String.format("""
+                {
+                    "title": "여성 독서 모임",
+                    "category": "2여성만 참여 가능",
+                    "description": "주 3회 운동하실 분 구해요.",
+                    "regionMain": "서울",
+                    "regionSub": "강남구",
+                    "date": "%s",
+                    "time": "10:30:00",
+                    "genderRequirement": "ALL",
+                    "minAge": 50,
+                    "maxAge": 100,
+                    "timeSpecified": "true",
+                    "joinType": "APPROVAL",
+                    "maxParticipants": 5
+                }
+                """, LocalDate.now().plusDays(3));
+
+        MvcResult result = mockMvc.perform(post("/api/squad/create")
+                .header("Authorization", tokenUser1)
+                .contentType("application/json")
+                .content(squadJson))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String response = result.getResponse().getContentAsString();
+        int pid = JsonPath.read(response, "$.pid");
+        Long squadId = (long) pid;
+
+        String tokenUser2 = tokenMap.get("user7@test.com");
+
+        mockMvc.perform(post("/api/squad/" + squadId + "/join-or-token")
+                .header("Authorization", tokenUser2))
+                .andExpect(status().isOk());
+
+        // user7@test.com이 모임을 떠나는 API 호출 필요
+
+        mockMvc.perform(post("/api/squad/" + squadId + "/join-or-token")
+                .header("Authorization", tokenUser2))
+                .andExpect(status().isOk());
+    }
 }
