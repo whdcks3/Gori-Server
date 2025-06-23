@@ -202,7 +202,7 @@ public class SquadService extends ASquadService {
         Squad squad = findSquad(sqaudId);
         User participantUser = findUser(userId);
 
-        if (squad.getUser() != user) {
+        if (squad.getUser().getPid() != user.getPid()) {
             throw new IllegalArgumentException("방장이 아닙니다. 승인 권한이 없습니다.");
         }
 
@@ -215,7 +215,7 @@ public class SquadService extends ASquadService {
     public void kickOffParticipant(User user, Long userId, Long sqaudId) {
         Squad squad = findSquad(sqaudId);
         User participantUser = findUser(userId);
-
+        System.out.println(squad.getUser().getPid() + " , " + user.getPid() + " , " + userId);
         if (squad.getUser().getPid() != user.getPid()) {
             throw new IllegalArgumentException("방장이 아닙니다. 승인 권한이 없습니다.");
         }

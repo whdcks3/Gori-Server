@@ -19,6 +19,9 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.ResultMatcher;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,7 +31,6 @@ import com.whdcks3.portfolio.gory_server.data.models.squad.SquadParticipant;
 import com.whdcks3.portfolio.gory_server.data.models.squad.SquadParticipant.SquadParticipationStatus;
 import com.whdcks3.portfolio.gory_server.data.models.user.EmailVerification;
 import com.whdcks3.portfolio.gory_server.data.models.user.User;
-import com.whdcks3.portfolio.gory_server.data.requests.SquadRequest;
 import com.whdcks3.portfolio.gory_server.enums.Gender;
 import com.whdcks3.portfolio.gory_server.enums.JoinType;
 import com.whdcks3.portfolio.gory_server.enums.LockType;
@@ -270,11 +272,19 @@ public class SquadControllerTest {
                 .header("Authorization", tokenUser2))
                 .andExpect(status().isOk());
 
+        // User user3 = userRepository.findByEmail("user3@test.com").orElseThrow();
+        // Squad squad = squadRepository.findById(squadId).orElseThrow();
+        // SquadParticipant participant =
+        // squadParticipantRepository.findByUserAndSquad(user3, squad).orElseThrow();
+        // participant.setStatus(SquadParticipationStatus.KICKED_OUT);
+        // squadParticipantRepository.save(participant);
+
         User user3 = userRepository.findByEmail("user3@test.com").orElseThrow();
-        Squad squad = squadRepository.findById(squadId).orElseThrow();
-        SquadParticipant participant = squadParticipantRepository.findByUserAndSquad(user3, squad).orElseThrow();
-        participant.setStatus(SquadParticipationStatus.KICKED_OUT);
-        squadParticipantRepository.save(participant);
+        long user3Pid = user3.getPid();
+
+        mockMvc.perform(post("/api/squad/" + squadId + "/kick/" + user3Pid)
+                .header("Authorization", tokenUser1))
+                .andExpect(status().isOk());
 
         mockMvc.perform(post("/api/squad/" + squadId + "/join-or-token")
                 .header("Authorization", tokenUser2))
@@ -456,8 +466,9 @@ public class SquadControllerTest {
         // squadParticipantRepository.findByUserAndSquad(user5, squad).orElseThrow();
 
         User user5 = userRepository.findByEmail("user5@test.com").orElseThrow();
+        long user5Pid = user5.getPid();
 
-        mockMvc.perform(post("/api/squad/" + squadId + "/approve/" + user5)
+        mockMvc.perform(post("/api/squad/" + squadId + "/approve/" + user5Pid)
                 .header("Authorization", tokenUser1))
                 .andExpect(status().isOk());
 
@@ -519,8 +530,9 @@ public class SquadControllerTest {
         // participant.setStatus(SquadParticipationStatus.REJECTED);
         // squadParticipantRepository.save(participant);
         User user6 = userRepository.findByEmail("user6@test.com").orElseThrow();
+        long user6Pid = user6.getPid();
 
-        mockMvc.perform(post("/api/squad/" + squadId + "/reject/" + user6)
+        mockMvc.perform(post("/api/squad/" + squadId + "/reject/" + user6Pid)
                 .header("Authorization", tokenUser1))
                 .andExpect(status().isOk());
 
@@ -569,8 +581,7 @@ public class SquadControllerTest {
                 .header("Authorization", tokenUser2))
                 .andExpect(status().isOk());
 
-        // user7@test.com이 모임을 떠나는 API 호출 필요
-        mockMvc.perform(post("/api/squad" + squadId + "/leave")
+        mockMvc.perform(post("/api/squad/" + squadId + "/leave")
                 .header("Authorization", tokenUser2))
                 .andExpect(status().isOk());
 
@@ -619,10 +630,11 @@ public class SquadControllerTest {
                 .header("Authorization", tokenUser2))
                 .andExpect(status().isOk());
 
-        User user8 = userRepository.findByEmail("user3@test.com").orElseThrow();
+        User user8 = userRepository.findByEmail("user8@test.com").orElseThrow();
+        long user8Pid = user8.getPid();
 
-        mockMvc.perform(post("/api/squad/" + squadId + "/kick/" + user8)
-                .header("Authorization", tokenUser2))
+        mockMvc.perform(post("/api/squad/" + squadId + "/kick/" + user8Pid)
+                .header("Authorization", tokenUser1))
                 .andExpect(status().isOk());
 
         mockMvc.perform(post("/api/squad/" + squadId + "/join-or-token")
@@ -630,4 +642,330 @@ public class SquadControllerTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    @DisplayName("user9가 성별이 여성만있는 방에서 남성으로 수정하면 실패")
+    void testUser9SquadOnlyFemale() throws Exception {
+        String tokenUser1 = tokenMap.get("user1@test.com");
+
+        String squadJson = String.format("""
+                {
+                    "title": "여성 독서 모임",
+                    "category": "2여성만 참여 가능",
+                    "description": "주 3회 운동하실 분 구해요.",
+                    "regionMain": "서울",
+                    "regionSub": "강남구",
+                    "date": "%s",
+                    "time": "10:30:00",
+                    "genderRequirement": "FEMALE",
+                    "minAge": 50,
+                    "maxAge": 100,
+                    "timeSpecified": "true",
+                    "joinType": "DIRECT",
+                    "maxParticipants": 5
+                }
+                """, LocalDate.now().plusDays(3));
+
+        MvcResult result = mockMvc.perform(post("/api/squad/create")
+                .header("Authorization", tokenUser1)
+                .contentType("application/json")
+                .content(squadJson))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String response = result.getResponse().getContentAsString();
+        int pid = JsonPath.read(response, "$.pid");
+        Long squadId = (long) pid;
+
+        String tokenUser2 = tokenMap.get("user9@test.com");
+
+        mockMvc.perform(post("/api/squad/" + squadId + "/join-or-token")
+                .header("Authorization", tokenUser2))
+                .andExpect(status().isOk());
+
+        String modifyJson = String.format("""
+                {
+                    "title": "여성 독서 모임",
+                    "category": "2여성만 참여 가능",
+                    "description": "주 3회 운동하실 분 구해요.",
+                    "regionMain": "서울",
+                    "regionSub": "강남구",
+                    "date": "%s",
+                    "time": "10:30:00",
+                    "genderRequirement": "MALE",
+                    "minAge": 50,
+                    "maxAge": 100,
+                    "timeSpecified": "true",
+                    "joinType": "DIRECT",
+                    "maxParticipants": 5
+                }
+                """, LocalDate.now().plusDays(3));
+
+        mockMvc.perform(put("/api/squad/modify/" + squadId)
+                .header("Authorization", tokenUser1)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(modifyJson))
+                .andExpect(status().isBadRequest());
+
+    }
+
+    @Test
+    @DisplayName("user10, 여성전용방에 여자만 있음(200ok)")
+    void testUser10OnlyFemale() throws Exception {
+        String tokenUser1 = tokenMap.get("user1@test.com");
+
+        String squadJson = String.format("""
+                {
+                    "title": "여성 독서 모임",
+                    "category": "2여성만 참여 가능",
+                    "description": "주 3회 운동하실 분 구해요.",
+                    "regionMain": "서울",
+                    "regionSub": "강남구",
+                    "date": "%s",
+                    "time": "10:30:00",
+                    "genderRequirement": "ALL",
+                    "minAge": 50,
+                    "maxAge": 100,
+                    "timeSpecified": "true",
+                    "joinType": "DIRECT",
+                    "maxParticipants": 5
+                }
+                """, LocalDate.now().plusDays(3));
+
+        MvcResult result = mockMvc.perform(post("/api/squad/create")
+                .header("Authorization", tokenUser1)
+                .contentType("application/json")
+                .content(squadJson))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String response = result.getResponse().getContentAsString();
+        int pid = JsonPath.read(response, "$.pid");
+        Long squadId = (long) pid;
+
+        String tokenUser2 = tokenMap.get("user10@test.com");
+
+        mockMvc.perform(post("/api/squad/" + squadId + "/join-or-token")
+                .header("Authorization", tokenUser2))
+                .andExpect(status().isOk());
+
+        String modifyJson = String.format("""
+                {
+                    "title": "여성 독서 모임",
+                    "category": "2여성만 참여 가능",
+                    "description": "주 3회 운동하실 분 구해요.",
+                    "regionMain": "서울",
+                    "regionSub": "강남구",
+                    "date": "%s",
+                    "time": "10:30:00",
+                    "genderRequirement": "MALE",
+                    "minAge": 50,
+                    "maxAge": 100,
+                    "timeSpecified": "true",
+                    "joinType": "DIRECT",
+                    "maxParticipants": 5
+                }
+                """, LocalDate.now().plusDays(3));
+
+        mockMvc.perform(put("/api/squad/modify/" + squadId)
+                .header("Authorization", tokenUser1)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(modifyJson))
+                .andExpect(status().isOk());
+
+    }
+
+    @Test
+    @DisplayName("user11, 현재참가자>최대참가자로 수정하면 오류")
+    void testUser11OnlyFemale() throws Exception {
+        String tokenUser1 = tokenMap.get("user1@test.com");
+        String tokenUser2 = tokenMap.get("user12")
+
+        String squadJson = String.format("""
+                {
+                    "title": "여성 독서 모임",
+                    "category": "2여성만 참여 가능",
+                    "description": "주 3회 운동하실 분 구해요.",
+                    "regionMain": "서울",
+                    "regionSub": "강남구",
+                    "date": "%s",
+                    "time": "10:30:00",
+                    "genderRequirement": "ALL",
+                    "minAge": 50,
+                    "maxAge": 100,
+                    "timeSpecified": "true",
+                    "joinType": "DIRECT",
+                    "maxParticipants": 5
+                }
+                """, LocalDate.now().plusDays(3));
+
+        MvcResult result = mockMvc.perform(post("/api/squad/create")
+                .header("Authorization", tokenUser1)
+                .contentType("application/json")
+                .content(squadJson))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String response = result.getResponse().getContentAsString();
+        int pid = JsonPath.read(response, "$.pid");
+        Long squadId = (long) pid;
+
+        String tokenUser2 = tokenMap.get("user10@test.com");
+
+        mockMvc.perform(post("/api/squad/" + squadId + "/join-or-token")
+                .header("Authorization", tokenUser2))
+                .andExpect(status().isOk());
+
+        String modifyJson = String.format("""
+                {
+                    "title": "여성 독서 모임",
+                    "category": "2여성만 참여 가능",
+                    "description": "주 3회 운동하실 분 구해요.",
+                    "regionMain": "서울",
+                    "regionSub": "강남구",
+                    "date": "%s",
+                    "time": "10:30:00",
+                    "genderRequirement": "MALE",
+                    "minAge": 50,
+                    "maxAge": 100,
+                    "timeSpecified": "true",
+                    "joinType": "DIRECT",
+                    "maxParticipants": 5
+                }
+                """, LocalDate.now().plusDays(3));
+
+        mockMvc.perform(put("/api/squad/modify/" + squadId)
+                .header("Authorization", tokenUser1)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(modifyJson))
+                .andExpect(status().isOk());
+
+    }
+
+    @Test
+    @DisplayName("user1이 생성한 스쿼드에 다른 참여자가 있을 경우 참여 실패")
+    void testUser10DeleteSquad() throws Exception {
+        String tokenUser1 = tokenMap.get("user1@test.com");
+
+        String squadJson = String.format("""
+                {
+                    "title": "여성 독서 모임",
+                    "category": "2여성만 참여 가능",
+                    "description": "주 3회 운동하실 분 구해요.",
+                    "regionMain": "서울",
+                    "regionSub": "강남구",
+                    "date": "%s",
+                    "time": "10:30:00",
+                    "genderRequirement": "ALL",
+                    "minAge": 50,
+                    "maxAge": 100,
+                    "timeSpecified": "true",
+                    "joinType": "DIRECT",
+                    "maxParticipants": 10
+                }
+                """, LocalDate.now().plusDays(3));
+
+        MvcResult result = mockMvc.perform(post("/api/squad/create")
+                .header("Authorization", tokenUser1)
+                .contentType("application/json")
+                .content(squadJson))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String response = result.getResponse().getContentAsString();
+        int pid = JsonPath.read(response, "$.pid");
+        Long squadId = (long) pid;
+
+        String tokenUser2 = tokenMap.get("user10@test.com");
+
+        mockMvc.perform(post("/api/squad/" + squadId + "join-or-token")
+                .header("Authorization", tokenUser2))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/api/squad/delete" + squadId)
+                .header("Authorization", tokenUser1))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("user1이 생성한 스쿼드에 다른 참여자가 있을 경우에도 강제 삭제")
+    void testUser12ForcedDeleteWithOtherParticipants() throws Exception {
+        int creatorId = 1, joinerId = 11;
+        MvcResult createRes = createSquadAprrovalDefault(creatorId).andExpect(status().isOk()).andReturn();
+
+        String response = createRes.getResponse().getContentAsString();
+        int pid = JsonPath.read(response, "$.pid");
+        Long squadId = (long) pid;
+
+        joinOrGetToken(squadId, joinerId).andExpect(status().isOk());
+
+        deleteSquad(squadId, creatorId, true).andExpect(status().isOk());
+    }
+
+    // function
+
+    public String getToken(int id) {
+        return tokenMap.get("user" + id + "@test.com");
+    }
+
+    public ResultActions createSquadDefault(int id, int minAge, int maxAge, Gender gender, JoinType joinType)
+            throws Exception {
+        return createSquad(id, "여성 독서 모임", "2여성만 참여 가능", "주 3회 운동하실 분 구해요.", "서울", "강남구", LocalDate.now().plusDays(3),
+                LocalTime.of(10, 0, 0), gender, minAge, maxAge, true, joinType, 5);
+    }
+
+    public ResultActions createSquadAprrovalDefault(int id) throws Exception {
+        return createSquadDefault(id, 50, 100, Gender.ALL, JoinType.APPROVAL);
+    }
+
+    public ResultActions createSquadDirectDefault(int id) throws Exception {
+        return createSquadDefault(id, 50, 100, Gender.ALL, JoinType.DIRECT);
+    }
+
+    public ResultActions createSquadDirectMin50Max100AllDirect(int id) throws Exception {
+        return createSquadDefault(id, 50, 100, Gender.ALL, JoinType.DIRECT);
+    }
+
+    public ResultActions createSquad(int id, String title, String category, String description,
+            String regionMain, String regionSub, LocalDate date, LocalTime time, Gender genderRequirement, int minAge,
+            int maxAge, boolean timeSpecified, JoinType joinType, int maxParticipants)
+            throws Exception {
+        String token = getToken(id);
+        String request = String.format("""
+                    {
+                    "title": "%s",
+                    "category": "%s",
+                    "description": "%s",
+                    "regionMain": "%s",
+                    "regionSub": "%s",
+                    "date": "%s",
+                    "time": "%s",
+                    "genderRequirement": "%s",
+                    "minAge": %d,
+                    "maxAge": %d,
+                    "timeSpecified": "%s",
+                    "joinType": "%s",
+                    "maxParticipants": %d
+                }
+                """, title, category, description, regionMain, regionSub, date, time, genderRequirement, minAge, maxAge,
+                timeSpecified, joinType, maxParticipants);
+
+        ResultActions result = mockMvc.perform(post("/api/squad/create")
+                .header("Authorization", token)
+                .contentType("application/json")
+                .content(request));
+        return result;
+    }
+
+    public ResultActions joinOrGetToken(long squadPid, int userId) throws Exception {
+        String token = getToken(userId);
+        return mockMvc.perform(post("/api/squad/" + squadPid + "/join-or-token")
+                .header("Authorization", token));
+    }
+
+    public ResultActions deleteSquad(long squadPid, int creatorId, boolean isForced) throws Exception {
+        String token = getToken(creatorId);
+        return mockMvc.perform(delete("/api/squad/delete/" + squadPid)
+                .header("Authorization", token)
+                .param("isFprcedDelete", String.valueOf(isForced)));
+    }
 }

@@ -95,7 +95,7 @@ public abstract class ASquadService implements ISquadService {
         int joinedCount = (int) squad.getParticipants().stream()
                 .filter(paritipant -> paritipant.getStatus() == SquadParticipationStatus.JOINED)
                 .count();
-        if (joinedCount < req.getMaxParticipants()) {
+        if (joinedCount > req.getMaxParticipants()) {
             throw new IllegalArgumentException(String.format("이미 %d명이 참여중이라 인원 수정이 어려워요.", joinedCount));
         }
     }
