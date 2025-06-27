@@ -94,7 +94,7 @@ public class SquadService extends ASquadService {
 
         if (participantOpt.isPresent()) {
             SquadParticipant participant = participantOpt.get();
-
+            System.out.println("Type: " + participant.getStatus());
             if (participant.getStatus() == SquadParticipationStatus.JOINED) {
                 String chatToken = jwtUtils.issueToken(user, squad);
                 return Map.of("status", "joined", "chatToken", chatToken);
@@ -114,7 +114,7 @@ public class SquadService extends ASquadService {
         }
         joinSquad(user, squad);
 
-        return Map.of("status", squad.getJoinType().equals(JoinType.APPROVAL) ? "reqested" : "approved");
+        return Map.of("status", squad.getJoinType().equals(JoinType.APPROVAL) ? "requested" : "approved");
     }
 
     public DataResponse homeSquads(User user, SquadFilterRequest req, Pageable pageable) {
