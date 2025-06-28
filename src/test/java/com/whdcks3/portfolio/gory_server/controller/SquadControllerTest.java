@@ -272,6 +272,24 @@ public class SquadControllerTest {
     }
 
     @Test
+    @DisplayName("user1이 user17(58세)가있는데 최소 나이를 60으로 수정시 실패")
+    void testUser1SquadModifyAge() throws Exception {
+        MvcResult result = createSquadAprrovalDefault(1).andExpect(status().isOk()).andReturn();
+        Long squadId = extractSquadId(result);
+        joinOrGetToken(squadId, 17).andExpect(status().isOk());
+        modifySquadMinAge(1, squadId, 60).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("user1이 user2(72세)가 있는데 최대 나이를 70으로 수정시 실패")
+    void testUser1SquadModifyMaxAge() throws Exception {
+        MvcResult result = createSquadAprrovalDefault(1).andExpect(status().isOk()).andReturn();
+        Long squadId = extractSquadId(result);
+        joinOrGetToken(squadId, 2).andExpect(status().isOk());
+        modifySquadMaxAge(1, squadId, 70).andExpect(status().isBadRequest());
+    }
+
+    @Test
     @DisplayName("user1이 생성한 스쿼드에 다른 참여자가 있을 경우 참여 실패")
     void testUser1DeleteSquad() throws Exception {
         MvcResult result = createSquadAprrovalDefault(1).andExpect(status().isOk()).andReturn();
@@ -451,6 +469,14 @@ public class SquadControllerTest {
     public ResultActions modifySquadParticipants(int userId, long squadId) throws Exception {
         return modifySquad(userId, squadId, "여성 독서 모임", "여성만 참여 가능", "주 3회 운동하실 분 구해요.", "서울", "강남구",
                 LocalDate.now().plusDays(3), LocalTime.of(10, 0, 0), Gender.MALE, 50, 100, true, JoinType.APPROVAL, 4);
+    }
+
+    public ResultActions modifySquadMinAge(int userId, long squadId, int minAge) throws Exception {
+        return modifySquadDefault(userId, squadId, minAge, 80, Gender.ALL, JoinType.APPROVAL);
+    }
+
+    public ResultActions modifySquadMaxAge(int userId, long squadId, int maxAge) throws Exception {
+        return modifySquadDefault(userId, squadId, 50, maxAge, Gender.ALL, JoinType.APPROVAL);
     }
 
     public ResultActions joinOrGetToken(long squadPid, int userId) throws Exception {
