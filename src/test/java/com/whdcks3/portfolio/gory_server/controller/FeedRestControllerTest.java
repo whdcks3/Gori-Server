@@ -1,5 +1,6 @@
 package com.whdcks3.portfolio.gory_server.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -8,7 +9,9 @@ import java.util.Map;
 
 import javax.transaction.Transactional;
 
+import org.junit.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -102,6 +105,14 @@ public class FeedRestControllerTest {
             String accessToken = JsonPath.read(response, "$.accessToken");
             tokenMap.put(email, "Bearer " + accessToken);
         }
+    }
+
+    @Test
+    @DisplayName("25명의 유저가 로그인 성공 후 토큰 발급을 받음, 테스트주체인 user1 토큰 확인")
+    void testTokenMapBuilt() {
+        assertThat(tokenMap).hasSize(25);
+        assertThat(tokenMap.get("user1@test.com")).startsWith("Bearer ");
+        assertThat(tokenMap.get("user1@test.com")).isNotBlank();
     }
 
 }
