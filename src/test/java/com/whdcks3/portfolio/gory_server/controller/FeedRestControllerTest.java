@@ -20,6 +20,7 @@ import org.springframework.http.MediaTypeEditor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
 
 import com.jayway.jsonpath.JsonPath;
 import com.whdcks3.portfolio.gory_server.data.models.user.EmailVerification;
@@ -115,4 +116,13 @@ public class FeedRestControllerTest {
         assertThat(tokenMap.get("user1@test.com")).isNotBlank();
     }
 
+    @Test
+    @DisplayName("user1이 피드 생성")
+    void testUser1CreateFeed() throws Exception {
+
+    }
+
+    public ResultActions createFeed(int id, String content, String Category, ) throws Exception {
+
+    }
 }
