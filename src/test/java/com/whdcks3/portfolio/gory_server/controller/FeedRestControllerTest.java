@@ -21,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.jayway.jsonpath.JsonPath;
 import com.whdcks3.portfolio.gory_server.data.models.user.EmailVerification;
@@ -119,10 +120,39 @@ public class FeedRestControllerTest {
     @Test
     @DisplayName("user1이 피드 생성")
     void testUser1CreateFeed() throws Exception {
+        String token = getToken(1);
+        String request = """
+                {
+                "content": "운동 인증"
+                }
+                """;
+    }
+
+    public ResultActions createFeedDefault() throws Exception {
+        String token = getToken(1);
+        String request = """
+                {
+                "content": "오늘 운동 인증",
+                "category": "전쳬"
+                }
+                """;
+        ResultActions result = mockMvc.perform(post("api/feed/create")
+                .header("Authroization", token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(request));
+        return result;
+    }
+
+    public String getToken(int id) {
+        return tokenMap.get("user" + id + "@test.com");
+    }
+
+    public ResultActions createFeedDefault(int id, int content) throws Exception {
 
     }
 
-    public ResultActions createFeed(int id, String content, String Category, ) throws Exception {
-
+    public Long extractFeedId(MvcResult result) throws Exception {
+        String response = result.getResponse().getContentAsString();
+        return Long.valueOf(JsonPath.read(response, "$.pid").toString());
     }
 }
