@@ -128,7 +128,7 @@ public class FeedRestControllerTest {
                 """;
     }
 
-    public ResultActions createFeedDefault() throws Exception {
+    public ResultActions createFeed() throws Exception {
         String token = getToken(1);
         String request = """
                 {
@@ -148,7 +148,7 @@ public class FeedRestControllerTest {
     }
 
     public ResultActions createFeedDefault(int id, int content) throws Exception {
-
+        return createFeed();
     }
 
     public Long extractFeedId(MvcResult result) throws Exception {
