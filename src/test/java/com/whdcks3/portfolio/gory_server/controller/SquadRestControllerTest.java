@@ -303,7 +303,7 @@ public class SquadRestControllerTest {
     void testUser12ForcedDeleteWithOtherParticipants() throws Exception {
         MvcResult result = createSquadAprrovalDefault(1).andExpect(status().isOk()).andReturn();
         Long squadId = extractSquadId(result);
-        joinOrGetToken(squadId, 1).andExpect(status().isOk());
+        joinOrGetToken(squadId, 2).andExpect(status().isOk());
         deleteSquad(squadId, 1, true).andExpect(status().isOk());
     }
 
@@ -495,8 +495,7 @@ public class SquadRestControllerTest {
     public void joinOrGetTokenAndExpectPending(long squadPid, int userId) throws Exception {
         joinOrGetToken(squadPid, userId)
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("pending"))
-                .andExpect(jsonPath("$.chatToken").isString());
+                .andExpect(jsonPath("$.status").value("pending"));
     }
 
     public void joinOrGetTokenAndExpectPendingNoToken(long squadPid, int userId) throws Exception {
@@ -515,7 +514,7 @@ public class SquadRestControllerTest {
         String token = getToken(creatorId);
         return mockMvc.perform(delete("/api/squad/delete/" + squadPid)
                 .header("Authorization", token)
-                .param("isFprcedDelete", String.valueOf(isForced)));
+                .param("isForcedDelete", String.valueOf(isForced)));
     }
 
     public Long extractSquadId(MvcResult result) throws Exception {

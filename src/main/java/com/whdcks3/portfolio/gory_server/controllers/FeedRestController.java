@@ -44,8 +44,7 @@ public class FeedRestController {
     @PostMapping("/create")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> createFeed(@AuthenticationPrincipal User user, @ModelAttribute FeedRequest req) {
-        feedService.createFeed(req, user);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok().body(feedService.createFeed(req, user));
     }
 
     @GetMapping("/{id}")

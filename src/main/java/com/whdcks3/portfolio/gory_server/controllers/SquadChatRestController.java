@@ -9,7 +9,6 @@ import org.springframework.web.multipart.MultipartFile;
 import com.whdcks3.portfolio.gory_server.data.models.squad.SquadChat;
 import com.whdcks3.portfolio.gory_server.data.models.user.User;
 import com.whdcks3.portfolio.gory_server.service.ImageUploadService;
-import com.whdcks3.portfolio.gory_server.service.S3FileService;
 import com.whdcks3.portfolio.gory_server.service.SquadChatService;
 
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
