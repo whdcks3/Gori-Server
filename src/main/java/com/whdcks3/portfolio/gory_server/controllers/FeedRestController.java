@@ -1,5 +1,7 @@
 package com.whdcks3.portfolio.gory_server.controllers;
 
+import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -43,7 +45,7 @@ public class FeedRestController {
 
     @PostMapping("/create")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> createFeed(@AuthenticationPrincipal User user, @ModelAttribute FeedRequest req) {
+    public ResponseEntity<?> createFeed(@AuthenticationPrincipal User user, @Valid @ModelAttribute FeedRequest req) {
         return ResponseEntity.ok().body(feedService.createFeed(req, user));
     }
 

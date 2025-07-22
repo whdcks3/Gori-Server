@@ -54,6 +54,12 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage(), e);
     }
 
+    @ExceptionHandler(UnSupportedImageFormatException.class)
+    public ResponseEntity<Map<String, Object>> handleUnsupportedImageFormatException(
+            UnSupportedImageFormatException e) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+    }
+
     @ExceptionHandler(JwtTokenException.class)
     public ResponseEntity<Map<String, Object>> handleJwtTokenException(JwtTokenException e) {
         System.out.println("JwtTokenException: " + e.getMessage());

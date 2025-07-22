@@ -1,12 +1,15 @@
 package com.whdcks3.portfolio.gory_server.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -22,9 +25,11 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.google.firebase.database.Transaction.Result;
 import com.jayway.jsonpath.JsonPath;
 import com.whdcks3.portfolio.gory_server.data.models.user.EmailVerification;
 import com.whdcks3.portfolio.gory_server.data.models.user.User;
@@ -125,7 +130,7 @@ public class FeedRestControllerTest {
     }
 
     @Test
-    @DisplayName("user1이 피드 생성")
+    @DisplayName("user1이 정상적인 피드(텍스트O + 이미지O) 생성")
     void testUser1CreateFeed() throws Exception {
         createFeed(1).andExpect(status().isOk()).andReturn();
     }
@@ -142,7 +147,127 @@ public class FeedRestControllerTest {
     @DisplayName("user1이 피드 삭제")
     void testUser1DeleteFeed() throws Exception {
         MvcResult result = createFeed(1).andExpect(status().isOk()).andReturn();
+        Long feedId = extractFeedId(result);
+        deleteFeed(1, feedId).andExpect(status().isOk());
+    }
 
+    @Test
+    @DisplayName("user2이 정상적인 피드(텍스트O + 이미지X) 생성")
+    void testUser2CreateFeed() throws Exception {
+        createFeedNoImage(2).andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("user3가 비정상적인 피드(categoryX) 생성")
+    void testUser3FeedNoCategory() throws Exception {
+        createFeedNoCategory(3).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("user4가 비정상적인 피드(contentX) 생성")
+    void testUser4FeedNoContent() throws Exception {
+        createFeedNoContent(4).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("user5가 이미지 최대 업로드수 초과")
+    void testUser5FeedImageUploadExceeded() throws Exception {
+        createFeedUploadLimit(5).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("user6가 잘못된 이미지 형식 업로드")
+    void testUser6NotFoundImage() throws Exception {
+        createFeedInvalidImage(6).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("user7,8,9의 전체 피드 목록을 조회하기")
+    void testUser7GetFeedList() throws Exception {
+        createFeed(7).andExpect(status().isOk());
+        createFeed(8).andExpect(status().isOk());
+        createFeed(9).andExpect(status().isOk());
+        getFeedList(1).andExpect(status().isOk());
+
+    }
+
+    public ResultActions getFeedList(int id) throws Exception {
+        String token = getToken(id);
+        ResultActions result = mockMvc.perform(get("/api/feed/home")
+                .param("category", "전체")
+                .header("Authorization", token))
+                .andExpect(jsonPath("$.list.length()").value(3))
+                .andExpect(jsonPath("$.list[0].content").exists())
+                .andExpect(jsonPath("$.list[0].category").exists());
+        return result;
+    }
+
+    public ResultActions createFeedInvalidImage(int id) throws Exception {
+        String token = getToken(id);
+
+        MockMultipartFile invalidFile = new MockMultipartFile(
+                "addedImages",
+                "test.txt",
+                "image/jpeg",
+                "not image".getBytes());
+        MockMultipartHttpServletRequestBuilder builder = multipart("/api/feed/create");
+        builder.file(invalidFile);
+        builder.param("content", "잘못된 이미지 형식 테스트");
+        builder.param("category", "전체");
+        builder.header("Authorization", token);
+
+        ResultActions result = mockMvc.perform(builder);
+        return result;
+    }
+
+    public ResultActions createFeedUploadLimit(int id) throws Exception {
+        String token = getToken(id);
+
+        MockMultipartFile[] files = new MockMultipartFile[11];
+        for (int i = 0; i < 11; i++) {
+            files[i] = new MockMultipartFile(
+                    "addedImages",
+                    "test" + i + ".jpg",
+                    "image/jpeg",
+                    "imagetest".getBytes());
+        }
+
+        MockMultipartHttpServletRequestBuilder builder = multipart("/api/feed/create");
+
+        builder.param("content", "이미지10장 초과시 오류");
+        builder.param("category", "전체");
+        builder.header("Authorization", token);
+
+        for (MockMultipartFile file : files) {
+            builder.file(file);
+        }
+        ResultActions result = mockMvc.perform(builder);
+        return result;
+    }
+
+    public ResultActions createFeedNoContent(int id) throws Exception {
+        String token = getToken(id);
+        ResultActions result = mockMvc.perform(multipart("/api/feed/create")
+                .param("category", "전체")
+                .header("Authorization", token));
+        return result;
+    }
+
+    public ResultActions createFeedNoImage(int id) throws Exception {
+        String token = getToken(id);
+        ResultActions result = mockMvc.perform(multipart("/api/feed/create")
+                .param("content", "테스트 본문")
+                .param("category", "전체")
+                .header("Authorization", token));
+        return result;
+    }
+
+    public ResultActions createFeedNoCategory(int id) throws Exception {
+        String token = getToken(id);
+        ResultActions result = mockMvc.perform(multipart("/api/feed/create")
+                .param("content", "테스트 본문")
+                .header("Authorization", token));
+        return result;
     }
 
     public ResultActions createFeed(int id) throws Exception {
@@ -184,6 +309,12 @@ public class FeedRestControllerTest {
                 })
                 .header("Authorization", token));
         return result;
+    }
+
+    public ResultActions deleteFeed(int userId, Long feedId) throws Exception {
+        String token = getToken(userId);
+        return mockMvc.perform(delete("/api/feed/delete/" + feedId)
+                .header("Authorization", token));
     }
 
     public String getToken(int id) {
