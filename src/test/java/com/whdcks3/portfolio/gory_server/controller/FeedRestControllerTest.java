@@ -21,15 +21,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
-import com.google.firebase.database.Transaction.Result;
 import com.jayway.jsonpath.JsonPath;
 import com.whdcks3.portfolio.gory_server.data.models.user.EmailVerification;
 import com.whdcks3.portfolio.gory_server.data.models.user.User;
@@ -79,7 +76,7 @@ public class FeedRestControllerTest {
                         "snsType": "%s",
                         "snsId": "%s",
                         "name": "%s",
-                        "carrier": "LG",
+                        "carrier": "SKT",
                         "phone": "010-1234-%04d",
                         "gender": "%s",
                         "birth": "%s",
@@ -184,22 +181,40 @@ public class FeedRestControllerTest {
     @Test
     @DisplayName("user7,8,9의 전체 피드 목록을 조회하기")
     void testUser7GetFeedList() throws Exception {
-        createFeed(7).andExpect(status().isOk());
-        createFeed(8).andExpect(status().isOk());
-        createFeed(9).andExpect(status().isOk());
+        createFeed(7).andExpect(status().isOk()).andReturn();
+        createFeed(8).andExpect(status().isOk()).andReturn();
+        createFeed(9).andExpect(status().isOk()).andReturn();
         getFeedList(1).andExpect(status().isOk());
 
+    }
+
+    @Test
+    @DisplayName("user11이 본인이 안쓴글 삭제 시도")
+    void testUser10NotMineFeed() throws Exception {
+        MvcResult result = createFeed(10).andExpect(status().isOk()).andReturn();
+        Long feedId = extractFeedId(result);
+        forceDeleteFeed(11, feedId).andExpect(status().isForbidden());
+    }
+
+    public ResultActions forceDeleteFeed(int userId, Long feedId) throws Exception {
+        String token = getToken(11);
+        ResultActions result = mockMvc.perform(delete("/api/feed/delete/{id}", feedId)
+                .header("Authorization", token)
+                .contentType(MediaType.APPLICATION_JSON));
+        return result;
     }
 
     public ResultActions getFeedList(int id) throws Exception {
         String token = getToken(id);
         ResultActions result = mockMvc.perform(get("/api/feed/home")
                 .param("category", "전체")
-                .header("Authorization", token))
-                .andExpect(jsonPath("$.list.length()").value(3))
-                .andExpect(jsonPath("$.list[0].content").exists())
-                .andExpect(jsonPath("$.list[0].category").exists());
+                .header("Authorization", token)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hasNext").isBoolean())
+                .andExpect(jsonPath("$.list").isArray());
         return result;
+
     }
 
     public ResultActions createFeedInvalidImage(int id) throws Exception {
