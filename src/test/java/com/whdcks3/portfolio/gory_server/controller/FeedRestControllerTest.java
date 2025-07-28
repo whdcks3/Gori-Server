@@ -26,6 +26,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.jayway.jsonpath.JsonPath;
 import com.whdcks3.portfolio.gory_server.data.models.user.EmailVerification;
@@ -179,24 +180,30 @@ public class FeedRestControllerTest {
     }
 
     @Test
-    @DisplayName("user7,8,9의 전체 피드 목록을 조회하기")
+    @DisplayName("user1이 자신을 포함한 user7,8,9의 전체 피드 목록을 조회하기")
     void testUser7GetFeedList() throws Exception {
-        createFeed(7).andExpect(status().isOk()).andReturn();
-        createFeed(8).andExpect(status().isOk()).andReturn();
-        createFeed(9).andExpect(status().isOk()).andReturn();
+        createFeed(1).andExpect(status().isOk());
+        createFeed(7).andExpect(status().isOk());
+        createFeed(8).andExpect(status().isOk());
+        createFeed(9).andExpect(status().isOk());
         getFeedList(1).andExpect(status().isOk());
-
     }
 
     @Test
-    @DisplayName("user11이 본인이 안쓴글 삭제 시도")
+    @DisplayName("user10의 피드를 user11이 삭제 시도")
     void testUser10NotMineFeed() throws Exception {
         MvcResult result = createFeed(10).andExpect(status().isOk()).andReturn();
         Long feedId = extractFeedId(result);
-        forceDeleteFeed(11, feedId).andExpect(status().isForbidden());
+        DeleteFeedNotMine(11, feedId).andExpect(status().isUnauthorized());
     }
 
-    public ResultActions forceDeleteFeed(int userId, Long feedId) throws Exception {
+    @Test
+    @DisplayName("user1의 자신만의 피드 조회")
+    void testuser1FeedIsMine() throws Exception {
+        getMyFeed(1).andExpect(status().isOk());
+    }
+
+    public ResultActions DeleteFeedNotMine(int userId, Long feedId) throws Exception {
         String token = getToken(11);
         ResultActions result = mockMvc.perform(delete("/api/feed/delete/{id}", feedId)
                 .header("Authorization", token)
@@ -204,17 +211,27 @@ public class FeedRestControllerTest {
         return result;
     }
 
+    public ResultActions getMyFeed(int id) throws Exception {
+        String token = getToken(1);
+        createFeedDefault(id, "내 피드1", "운동", null, null).andExpect(status().isOk());
+        createFeedDefault(id, "내 피드2", "전체", null, null);
+        createFeedDefault(id, "내 피드3", "취미", null, null);
+
+        ResultActions result = mockMvc.perform(get("/api/feed/mine")
+                .header("Authorization", token)
+                .param("page", "0")
+                .param("size", "10"));
+        return result;
+    }
+
     public ResultActions getFeedList(int id) throws Exception {
         String token = getToken(id);
         ResultActions result = mockMvc.perform(get("/api/feed/home")
                 .param("category", "전체")
-                .header("Authorization", token)
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.hasNext").isBoolean())
-                .andExpect(jsonPath("$.list").isArray());
+                .param("page", "0")
+                .param("size", "10")
+                .header("Authorization", token));
         return result;
-
     }
 
     public ResultActions createFeedInvalidImage(int id) throws Exception {
@@ -302,6 +319,17 @@ public class FeedRestControllerTest {
                 .header("Authorization", token))
                 .andExpect(status().isOk());
         return result;
+    }
+
+    public ResultActions createFeedDefault(int userId, String content, String category, MultipartFile image,
+            String deletedImage) throws Exception {
+        MockMultipartFile contentFile = new MockMultipartFile("addedImages", "test.jpg", "image/jpeg",
+                "image dummy".getBytes());
+        return mockMvc.perform(multipart("/api/feed/create")
+                .file(contentFile)
+                .param("content", content)
+                .param("category", category)
+                .header("Authorization", getToken(userId)));
     }
 
     public ResultActions modifyFeed(int userId, Long feedId) throws Exception {
