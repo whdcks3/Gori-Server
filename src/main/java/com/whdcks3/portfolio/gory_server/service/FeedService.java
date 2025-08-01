@@ -107,7 +107,8 @@ public class FeedService {
     public DataResponse homeFeed(User user, Pageable pageable, String category) {
         List<User> excludedUsers = new ArrayList<>();
         if (user != null) {
-            excludedUsers = getExcludedUsers(user);
+            User managedUser = userRepository.findById(user.getPid()).orElseThrow();
+            excludedUsers = getExcludedUsers(managedUser);
         }
         Page<Feed> feeds;
         System.out.println("excludedUsers size: " + excludedUsers.size());
@@ -120,13 +121,23 @@ public class FeedService {
                     ? feedRepository.findAll(pageable)
                     : feedRepository.findAllByCategory(category, pageable);
         }
+
         System.out.println("count: " + feeds.getSize());
         boolean hasNext = feeds.hasNext();
         System.out.println("feed content size: " + feeds.getContent().size());
-        List<FeedSimpleDto> feedDtos = feeds.getContent().stream()
+        // List<FeedSimpleDto> feedDtos = feeds.getContent().stream()
+        // .map(f -> FeedSimpleDto.toDto(f, user != null ? user.getPid() : null,
+        // hasFeedLike(user,
+        // f)))
+        // .toList();
+        List<FeedSimpleDto> feedDtos = feeds.getContent().stream().filter(f -> f.getPid() >= 25 && f.getPid() <= 27)
                 .map(f -> FeedSimpleDto.toDto(f, user.getPid(), hasFeedLike(user, f))).toList();
-        System.out.println("count2: " + feedDtos.size());
-        return new DataResponse(hasNext, feedDtos);
+        feeds.getContent().stream()
+                .map(f -> null)
+                .toList();
+        return new DataResponse(false, new ArrayList<>());
+        // System.out.println("count2: " + feedDtos.size());
+        // return new DataResponse(hasNext, feedDtos);
     }
 
     public DataResponse myFeeds(Long userId, Pageable pageable) {

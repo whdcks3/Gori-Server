@@ -26,6 +26,7 @@ import com.whdcks3.portfolio.gory_server.enums.AlarmType;
 import com.whdcks3.portfolio.gory_server.enums.LockType;
 import com.whdcks3.portfolio.gory_server.enums.Role;
 
+import io.jsonwebtoken.lang.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -112,6 +113,21 @@ public class User extends BaseEntity {
 
     @Column
     private LocalDateTime lockedUntil;
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (!(obj instanceof User))
+            return false;
+        User other = (User) obj;
+        return getPid() != null && getPid().equals(other.getPid());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getPid());
+    }
 
     public User(SignupRequest req, String password, String imageUrl) {
         this.email = req.getEmail();

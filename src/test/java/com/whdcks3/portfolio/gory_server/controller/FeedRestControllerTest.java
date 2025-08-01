@@ -1,13 +1,12 @@
 package com.whdcks3.portfolio.gory_server.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.security.PrivateKey;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +35,9 @@ import com.whdcks3.portfolio.gory_server.repositories.EmailVerificationRepositor
 import com.whdcks3.portfolio.gory_server.repositories.FeedRepository;
 import com.whdcks3.portfolio.gory_server.repositories.UserRepository;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
@@ -55,6 +57,8 @@ public class FeedRestControllerTest {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    private PrivateKey privateKey;
 
     private Map<String, String> tokenMap = new HashMap<>();
 
@@ -214,8 +218,8 @@ public class FeedRestControllerTest {
     public ResultActions getMyFeed(int id) throws Exception {
         String token = getToken(1);
         createFeedDefault(id, "내 피드1", "운동", null, null).andExpect(status().isOk());
-        createFeedDefault(id, "내 피드2", "전체", null, null);
-        createFeedDefault(id, "내 피드3", "취미", null, null);
+        createFeedDefault(id, "내 피드2", "전체", null, null).andExpect(status().isOk());
+        createFeedDefault(id, "내 피드3", "취미", null, null).andExpect(status().isOk());
 
         ResultActions result = mockMvc.perform(get("/api/feed/mine")
                 .header("Authorization", token)
